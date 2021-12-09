@@ -1,0 +1,10 @@
+src/
+.vscode/
+node_modules
+.eslintrc.js
+.eslintignore
+.npmignore
+.prettierignore
+.prettierrc.js
+rollup.config.js
+tsconfig.json

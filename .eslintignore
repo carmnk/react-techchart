@@ -1,0 +1,6 @@
+.vscode/ 
+.eslintrc.js
+.prettierrc.js
+lib/
+node_modules/
+rollup.config.js

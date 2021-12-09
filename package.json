@@ -1,0 +1,65 @@
+{
+  "name": "react-tech-chart",
+  "version": "0.1.0",
+  "description": "a react charting component dedicated to technical analysis",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ./src",
+    "prettier": "prettier --write \"./src\"",
+    "build": "tsc"
+  },
+  "keywords": [
+    "react",
+    "charting"
+  ],
+  "author": "C. Menk",
+  "license": "MIT",
+  "dependencies": {
+    "@emotion/react": "^11.7.0",
+    "@emotion/styled": "^11.3.0",
+    "@mdi/js": "^5.9.55",
+    "@mdi/react": "^1.5.0",
+    "@mui/lab": "^5.0.0-alpha.47",
+    "@mui/material": "^5.2.0",
+    "@use-gesture/react": "^10.2.0",
+    "csv-parse": "^4.16.0",
+    "date-fns": "^2.21.3",
+    "konva": "^7.2.5",
+    "lodash": "^4.17.21",
+    "react-beautiful-dnd": "^13.1.0",
+    "react-konva": "^17.0.2-5",
+    "react-resize-detector": "^6.7.4",
+    "react-use": "^17.2.4",
+    "react-use-gesture": "^9.1.3",
+    "uniqid": "^5.4.0"
+  },
+  "peerDependencies": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-node-resolve": "^13.0.6",
+    "@rollup/plugin-typescript": "^8.3.0",
+    "@types/lodash": "^4.14.172",
+    "@types/node": "16.11.10",
+    "@types/react": "17.0.36",
+    "@types/react-beautiful-dnd": "^13.1.2",
+    "@types/react-dom": "^17.0.5",
+    "@types/uniqid": "^5.3.1",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "eslint": "^8.3.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-react": "^7.27.1",
+    "eslint-plugin-react-hooks": "^4.3.0",
+    "prettier": "^2.5.0",
+    "replace-in-file": "^6.3.2",
+    "rollup": "^2.60.1",
+    "rollup-plugin-dts": "^4.0.1",
+    "rollup-plugin-terser": "^7.0.2",
+    "tslib": "^2.3.1",
+    "typescript": "^4.5.2"
+  }
+}
