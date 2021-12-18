@@ -1,23 +1,23 @@
 {
   "files": {
-    "main.css": "/react-techchart/static/css/main.f2ed334f.chunk.css",
-    "main.js": "/react-techchart/static/js/main.8f8179af.chunk.js",
-    "main.js.map": "/react-techchart/static/js/main.8f8179af.chunk.js.map",
-    "runtime-main.js": "/react-techchart/static/js/runtime-main.5592ec9c.js",
-    "runtime-main.js.map": "/react-techchart/static/js/runtime-main.5592ec9c.js.map",
-    "static/js/2.bbd1b772.chunk.js": "/react-techchart/static/js/2.bbd1b772.chunk.js",
-    "static/js/2.bbd1b772.chunk.js.map": "/react-techchart/static/js/2.bbd1b772.chunk.js.map",
-    "static/js/3.5cf08047.chunk.js": "/react-techchart/static/js/3.5cf08047.chunk.js",
-    "static/js/3.5cf08047.chunk.js.map": "/react-techchart/static/js/3.5cf08047.chunk.js.map",
+    "main.css": "/react-techchart/static/css/main.4ec7bbbe.chunk.css",
+    "main.js": "/react-techchart/static/js/main.913c6828.chunk.js",
+    "main.js.map": "/react-techchart/static/js/main.913c6828.chunk.js.map",
+    "runtime-main.js": "/react-techchart/static/js/runtime-main.e0ec4e0e.js",
+    "runtime-main.js.map": "/react-techchart/static/js/runtime-main.e0ec4e0e.js.map",
+    "static/js/2.26fb25b1.chunk.js": "/react-techchart/static/js/2.26fb25b1.chunk.js",
+    "static/js/2.26fb25b1.chunk.js.map": "/react-techchart/static/js/2.26fb25b1.chunk.js.map",
+    "static/js/3.09c109c9.chunk.js": "/react-techchart/static/js/3.09c109c9.chunk.js",
+    "static/js/3.09c109c9.chunk.js.map": "/react-techchart/static/js/3.09c109c9.chunk.js.map",
     "index.html": "/react-techchart/index.html",
-    "static/css/main.f2ed334f.chunk.css.map": "/react-techchart/static/css/main.f2ed334f.chunk.css.map",
-    "static/js/2.bbd1b772.chunk.js.LICENSE.txt": "/react-techchart/static/js/2.bbd1b772.chunk.js.LICENSE.txt",
-    "static/js/main.8f8179af.chunk.js.LICENSE.txt": "/react-techchart/static/js/main.8f8179af.chunk.js.LICENSE.txt"
+    "static/css/main.4ec7bbbe.chunk.css.map": "/react-techchart/static/css/main.4ec7bbbe.chunk.css.map",
+    "static/js/2.26fb25b1.chunk.js.LICENSE.txt": "/react-techchart/static/js/2.26fb25b1.chunk.js.LICENSE.txt",
+    "static/js/main.913c6828.chunk.js.LICENSE.txt": "/react-techchart/static/js/main.913c6828.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.5592ec9c.js",
-    "static/js/2.bbd1b772.chunk.js",
-    "static/css/main.f2ed334f.chunk.css",
-    "static/js/main.8f8179af.chunk.js"
+    "static/js/runtime-main.e0ec4e0e.js",
+    "static/js/2.26fb25b1.chunk.js",
+    "static/css/main.4ec7bbbe.chunk.css",
+    "static/js/main.913c6828.chunk.js"
   ]
 }
