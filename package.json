@@ -1,8 +1,10 @@
 {
-  "name": "react-tech-chart",
-  "version": "0.1.0",
+  "name": "react-techchart",
+  "version": "0.1.1",
   "description": "a react charting component designed for technical analysis",
   "main": "lib/index.js",
+  "homepage": "https://carmnk.github.io/react-techchart/",
+  "repository": "github:carmnk/react-techchart",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint ./src",

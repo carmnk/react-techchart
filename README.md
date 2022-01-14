@@ -1,7 +1,7 @@
 # react-techchart [![Typescript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://github.com) [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://github.com)
 
 <p align="center">
-<img src="https://github.com/carmnk/resources/raw/main/icons/logo512.png" alt="react-tech-chart-logo" height="128px" width="128px"/> <br/>an interactive and extensible react charting tool designed for technical analysis.
+<img src="https://github.com/carmnk/resources/raw/main/icons/logo512.png" alt="react-techchart-logo" height="128px" width="128px"/> <br/>an interactive and extensible react charting tool designed for technical analysis.
 <br/>
 <span style="color: red;">experimental release 0.1.0</span>
 </p>
@@ -64,34 +64,33 @@ const settings = {
 
 // an OHLC-dataseries is required - replace with your dataseries
 export const exampleDataseries = [
-    {
-        "date": "2021-10-04T00:00:00.000Z",
-        "open": 335.529999,
-        "high": 335.940002,
-        "low": 322.700012,
-        "close": 326.230011,
-        "volume": 42885000 // optional
-    },
-    {
-        "date": "2021-10-05T00:00:00.000Z",
-        "open": 328.579987,
-        "high": 335.179993,
-        "low": 326.160004,
-        "close": 332.959991,
-        "volume": 35377900 // optional
-    },
-    // ... 
-]
+  {
+    date: "2021-10-04T00:00:00.000Z",
+    open: 335.529999,
+    high: 335.940002,
+    low: 322.700012,
+    close: 326.230011,
+    volume: 42885000, // optional
+  },
+  {
+    date: "2021-10-05T00:00:00.000Z",
+    open: 328.579987,
+    high: 335.179993,
+    low: 326.160004,
+    close: 332.959991,
+    volume: 35377900, // optional
+  },
+  // ...
+];
 
 // your page component
 export const MyPage = () => {
-  
   const [Data, setData] = React.useState({
     // data: array's objects require a date property of type Date (not string)
-    data: exampleDataseries.map((dat) => ({ ...dat, date: new Date(dat.date) })), 
+    data: exampleDataseries.map((dat) => ({ ...dat, date: new Date(dat.date) })),
     name: "Your Chart",
-    type: "chart",    // a string literal
-    id: "mainchart",  // arbitrary but unique id   
+    type: "chart", // a string literal
+    id: "mainchart", // arbitrary but unique id
   });
 
   const Controller = useChartController({
@@ -107,7 +106,7 @@ export const MyPage = () => {
   // optional - to access or control the component from outside
   const {
     ChartState, // ➜ current ChartState
-    Dispatch,   // ➜ Dispatch to modify ChartState (reducer-dispatch)
+    Dispatch, // ➜ Dispatch to modify ChartState (reducer-dispatch)
   } = Controller;
 
   return (
