@@ -3,7 +3,7 @@
 <p align="center">
 <img src="https://github.com/carmnk/resources/raw/main/icons/logo512.png" alt="react-techchart-logo" height="128px" width="128px"/> <br/>an interactive and extensible react charting tool designed for technical analysis.
 <br/>
-<span style="color: red;">experimental release 0.1.0</span>
+<span style="color: red;">experimental release 0.1.1</span>
 </p>
 
 ---
