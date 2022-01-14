@@ -2,10 +2,9 @@ import React from "react";
 import { Line } from "react-konva";
 import { isNullish } from "../../utils/Basics";
 import * as T from "../../Types";
-// import { useReactiveInfo2 } from "../../utils/React";
 
 export type CLineChartProps = {
-  subCharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   calcXaxis: T.ChartState["calc"]["xaxis"];
   calcSubcharts: T.ChartState["calc"]["subcharts"];
   yToPix?: (y: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;
@@ -19,21 +18,9 @@ export type CLineChartProps = {
 };
 
 export const CLineChartComponent = (props: CLineChartProps) => {
-  const {
-    subCharts,
-    subchartIdx,
-    yaxisIdx,
-    graphIdx,
-    indSeriesIdx = 0,
-    calcXaxis,
-    calcSubcharts,
-    // yToPix,
-    // areaTresholds,
-    rtTicks,
-  } = props;
-  // const { xaxis } = calc;
+  const { subcharts, subchartIdx, yaxisIdx, graphIdx, indSeriesIdx = 0, calcXaxis, calcSubcharts, rtTicks } = props;
 
-  const graph = subCharts[subchartIdx].yaxis[yaxisIdx].graphs[graphIdx];
+  const graph = subcharts[subchartIdx].yaxis[yaxisIdx].graphs[graphIdx];
   const calcGraph = calcSubcharts?.[subchartIdx]?.yaxis?.[yaxisIdx]?.graphs?.[graphIdx];
   const curTicks = rtTicks ? rtTicks : calcGraph?.curTicks;
   const graphVals: number[] = curTicks
@@ -52,8 +39,7 @@ export const CLineChartComponent = (props: CLineChartProps) => {
         .filter((val) => val !== null) as number[])
     : [];
 
-  // console.log("indIDx", indSeriesIdx, "CT", curTicks, "GV", graphVals);
-
+  // apprach to use areas -> to be reviewed, maybe separate component ?
   // const pixUpperTresh = areaTresholds && yToPix && yToPix(areaTresholds.upper, subchartIdx, yaxisIdx);
   // const pixLwrTresh = areaTresholds && yToPix && yToPix(areaTresholds.lower, subchartIdx, yaxisIdx);
   // const getAreaVals = (tresh: number, isUpper: boolean) => {
@@ -133,7 +119,7 @@ export const CLineChartComponent = (props: CLineChartProps) => {
   // const lowerAreaVals = areaTresholds?.lower ? getAreaVals(areaTresholds.lower, false) : null;
   // const upperAreaVals = areaTresholds?.upper ? getAreaVals(areaTresholds.upper, true) : null;
 
-  // const info = useReactiveInfo2([subCharts, calcXaxis, calcSubcharts, subchartIdx, yaxisIdx, graphIdx]);
+  // const info = useReactiveInfo2([subcharts, calcXaxis, calcSubcharts, subchartIdx, yaxisIdx, graphIdx]);
   // console.log("linechart renders", info);
 
   return graphVals?.length > 0 ? (

@@ -35,13 +35,11 @@ const CSTreeItem = styled(TreeItem)(({ theme }) => ({
 
     [`& .${treeItemClasses.content}`]: {
       paddingLeft: theme.spacing(1),
-      // pr: 0
-      // paddingLeft: 2,
     },
   },
 }));
 
-type CTreeItemProps = TreeItemProps & {
+export type CTreeItemProps = TreeItemProps & {
   bgColorSelected?: string;
   colorSelected?: string;
   labelIcon?: JSX.Element;
@@ -50,7 +48,7 @@ type CTreeItemProps = TreeItemProps & {
   typographyVariant?: TypographyProps["variant"];
 };
 
-export const CTreeItem = React.forwardRef((props: CTreeItemProps, ref: any) => {
+export const CTreeItem = React.forwardRef((props: CTreeItemProps, ref: React.Ref<unknown>) => {
   const {
     bgColorSelected,
     colorSelected,
@@ -65,18 +63,11 @@ export const CTreeItem = React.forwardRef((props: CTreeItemProps, ref: any) => {
     <CSTreeItem
       ref={ref}
       label={
-        <Stack
-          direction="row"
-          sx={{ alignItems: "center", alignContent: "center" }}
-        >
+        <Stack direction="row" sx={{ alignItems: "center", alignContent: "center" }}>
           <Box component="span" sx={{ mr: 1, lineHeight: 0 }}>
             {LabelIcon}
           </Box>
-          <Typography
-            variant={typographyVariant ?? "h6"}
-            component="div"
-            sx={{ flexGrow: 1 }}
-          >
+          <Typography variant={typographyVariant ?? "h6"} component="div" sx={{ flexGrow: 1 }}>
             {labelText}
           </Typography>
           <Typography variant="caption" component="div">

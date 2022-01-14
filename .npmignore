@@ -1,10 +1,12 @@
-src/
 .vscode/
-node_modules
-.eslintrc.js
+node_modules/
+src/
 .eslintignore
+.eslintrc.js
+.gitignore
 .npmignore
 .prettierignore
 .prettierrc.js
 rollup.config.js
 tsconfig.json
+tsconfig.tsbuildinfo

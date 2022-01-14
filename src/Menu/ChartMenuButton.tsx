@@ -20,7 +20,6 @@ export const ChartMenuButtonComponent = (props: ChartMenuButtonProps) => {
         sx={{
           width: 48,
           minWidth: 48,
-          // background: "primary.main",
           height: 48,
           textTransform: "none",
           borderRadius: 2,

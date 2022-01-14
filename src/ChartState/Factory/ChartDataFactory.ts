@@ -1,65 +1,11 @@
 import countBy from "lodash/countBy";
 import uniqBy from "lodash/uniqBy";
-import uniq from "lodash/uniq";
-import cloneDeep from "lodash/cloneDeep";
-import uniqid from "uniqid";
 import { chartPeriods, getUnitOfDate } from "../utils/DateTime";
 import { getMaxDataSeriesDecimals } from "../utils/Utils";
 import { isNullish } from "../../utils/Basics";
-import * as T from "../../Types";
 import { setStateProp } from "../../utils/React";
-
-export const createData = (
-  chartSeries: T.DataSeries,
-  chartName: string,
-  id: string,
-  indicator?: T.IndicatorModel,
-  indSrcId?: string,
-  indSrcLineIdx?: number
-): T.Data | null =>
-  !!indicator && !!indSrcId
-    ? createIndicatorData(chartSeries, indSrcId, indicator, indSrcLineIdx, id, chartName)
-    : T.isChartDataSeries(chartSeries)
-    ? createChartData(chartSeries, chartName, id)
-    : null;
-
-export const createIndicatorData = (
-  chartSeries: T.DataSeries,
-  indSrcId: string,
-  indicator: T.IndicatorModel,
-  indSrcLineIdx?: number,
-  id?: string,
-  name?: string
-): T.IndicatorData => {
-  const indicatorCopy = cloneDeep(indicator);
-  const seriesKeyParam = indicatorCopy.params.findIndex((param) => param.name === "dataSeriesKey");
-  if (seriesKeyParam !== -1 && !isNullish(indSrcLineIdx)) indicatorCopy.params[seriesKeyParam].val = indSrcLineIdx;
-  const indicatorData: T.IndicatorDataSeries = (indicator.indicatorFn as T.DataSeriesIndicatorFn)?.({
-    chartData: chartSeries,
-    prevData: [],
-    ...indicatorCopy.params.reduce((accObj, curParam) => ({ ...accObj, [curParam.name]: curParam.val }), {}),
-  });
-  const decimals = indicatorCopy.default.decimals ? indicatorCopy.default.decimals : 2; // 2 decimals if not otherwise provided
-  const intId = id ? id : uniqid();
-  const nameInt = name ?? indicatorCopy.name;
-  return {
-    data: indicatorData,
-    name: nameInt,
-    fullName:
-      nameInt +
-      "(" +
-      indicatorCopy.params
-        .map((param) => (param.name !== "dataSeriesKey" ? param.val : null))
-        .filter((val) => val !== null)
-        .join(",") +
-      ")",
-    type: "indicator" as const,
-    decimals,
-    indicator: indicatorCopy,
-    indSrcId,
-    id: intId,
-  };
-};
+import { getIndicatorsDependantIndicatorDatas, recalcIndicatorData } from "./IndicatorDataFactory";
+import * as T from "../../Types";
 
 export const createChartData = (chartData: T.ChartDataset[], chartName: string, id: string): T.ChartData | null => {
   const { decimals, isDescending, ...meta } = getGraphMetaData(chartData);
@@ -99,7 +45,7 @@ export const updateChartDataAndDeps = (
   const updatedGraph = updateChartData(dataGraph, newDatasets);
   const depIndicators = getIndicatorsDependantIndicatorDatas(data, dataId);
   const dataCopy = [...(setStateProp(current.data, [datIdx], updatedGraph) as T.ChartState["data"])];
-  depIndicators.forEach((id, idx) => {
+  depIndicators.forEach((id) => {
     const dataIdx = dataCopy.findIndex((dat) => dat.id === id);
     const indicatorData = dataCopy?.[dataIdx];
     if (indicatorData?.type !== "indicator") return;
@@ -124,7 +70,6 @@ const getChartPeriod = (dataPeriod: number): T.ChartPeriod | null => {
 const guessChartDataSeriesPeriod = (dataSeries: T.ChartDataSeries) => {
   const getDeltaT = (dataPoint1: T.ChartDataset, dataPoint0: T.ChartDataset) =>
     !dataPoint1?.date || !dataPoint0?.date ? 0 : dataPoint1.date.valueOf() - dataPoint0.date.valueOf();
-  // get dataperiod, chartperiod
   const deltaPeriods = dataSeries.slice(1).map((dataset, dIdx) => getDeltaT(dataSeries[dIdx + 1], dataSeries[dIdx]));
   const deltaPeriodOcc = countBy(deltaPeriods);
   const deltaPeriodsStat = Object.entries(deltaPeriodOcc).map(([key, val]) => ({ dT: parseInt(key, 10), amt: val }));
@@ -263,7 +208,7 @@ export const getDateStat = (
   function mergeDeep(prev: T.PeriodStat, newStat: T.PeriodStat): T.PeriodStat {
     const lastPrev = prev?.[prev.length - 1] ?? null;
     const firstNew = newStat?.[0] ?? null;
-    if (!lastPrev || !firstNew) return [...prev, ...newStat] as any;
+    if (!lastPrev || !firstNew) return [...prev, ...newStat] as T.PeriodStat;
     const linkProp =
       "year" in lastPrev
         ? "year"
@@ -300,88 +245,4 @@ export const getDateStat = (
     years: prevDateStat ? (mergeDeep(prevDateStat.years, dateTree) as T.ChartDateStat["years"]) : dateTree,
     accAmt,
   };
-};
-
-// recalc single! indicator dataseries and update indSrcId and params if changed
-export const recalcIndicatorData = (
-  data: T.ChartState["data"],
-  dataId: string,
-  updates?: { newIndSrcId?: string; newParams?: T.IndicatorModel["params"] },
-  prevData?: T.IndicatorDataSeries
-): T.IndicatorData | null => {
-  const { newIndSrcId, newParams } = updates ?? {};
-  const indicatorData = data.find((d) => d.id === dataId && d.type === "indicator");
-  if (indicatorData?.type !== "indicator") return null;
-  const iFn = indicatorData.indicator?.indicatorFn as T.DataSeriesIndicatorFn;
-  const indSrcId = newIndSrcId ? newIndSrcId : indicatorData.indSrcId;
-  const srcDataseries = data.find((dat) => dat.id === indSrcId)?.data;
-  if (!iFn || !srcDataseries) return null;
-  const params = newParams ? newParams : indicatorData.indicator.params;
-
-  return {
-    ...indicatorData,
-    data: iFn({
-      chartData: srcDataseries,
-      prevData: prevData ?? [],
-      ...params.reduce((accObj, curParam) => ({ ...accObj, [curParam.name]: curParam.val }), {}),
-    }),
-    fullName: !newParams
-      ? indicatorData.fullName
-      : indicatorData.name + "(" + newParams.map((param) => param.val).join(",") + ")",
-    indSrcId,
-    indicator: { ...indicatorData.indicator, params },
-  };
-};
-
-// indicator data state itself may depend on other indicator data state(s)
-export const getIndicatorsCalcDepIndicatorDatas = (
-  data: ({ id: string; type: "chart" } | { id: string; type: "indicator"; indSrcId: string })[],
-  dataId: string,
-  recursionResult?: string[]
-): string[] => {
-  const recResult = recursionResult ?? [];
-  if (recResult.includes(dataId)) return [];
-  const indicatorData = data.find((d) => d?.id === dataId && d?.type === "indicator");
-  if (indicatorData?.type !== "indicator") return [];
-  const child = data.find((d) => d.id === indicatorData.indSrcId);
-  return child?.type === "chart"
-    ? [indicatorData.id]
-    : child?.type === "indicator"
-    ? [...getIndicatorsCalcDepIndicatorDatas(data, child.id, [...recResult, indicatorData.id]), indicatorData.id] //childs first!
-    : [];
-};
-
-// when changing indicator data other indicator data(s) may be affected and to be updated, too
-export const getIndicatorsDependantIndicatorDatas = (data: T.ChartState["data"], dataId: string): string[] => {
-  return (data.filter((dat) => dat.type === "indicator" && dat.indSrcId === dataId) as T.IndicatorData[])
-    .map((dat) => [dat.id, ...getIndicatorsDependantIndicatorDatas(data, dat.id)])
-    .flat();
-};
-
-export const isCircularIndicatorDependency = (data: T.ChartState["data"], dataId: string, newIndSrcId: string) =>
-  getIndicatorsCalcDepIndicatorDatas(data, newIndSrcId).includes(dataId);
-
-export const updateIndicatorData = (
-  current: T.ChartState,
-  dataId: string,
-  updates?: { newIndSrcId?: string; newParams?: T.IndicatorModel["params"] },
-  prevData?: T.IndicatorDataSeries
-): T.ChartState["data"] => {
-  const { data } = current;
-  const { newIndSrcId, newParams } = updates ?? {};
-  // dismiss circular dependencies
-  if (!!newIndSrcId && isCircularIndicatorDependency(data, dataId, newIndSrcId)) return data;
-  const dependingDataIndicatorsIds = uniq([dataId, ...getIndicatorsDependantIndicatorDatas(data, dataId)]);
-  const dataCopy = [...data];
-  dependingDataIndicatorsIds.forEach((id, idx) => {
-    const dataIdx = dataCopy.findIndex((dat) => dat.id === id);
-    const updatedIndData = recalcIndicatorData(
-      dataCopy,
-      id,
-      id === dataId ? { newIndSrcId, newParams } : undefined,
-      prevData ?? []
-    );
-    if (updatedIndData) dataCopy[dataIdx] = updatedIndData;
-  });
-  return dataCopy;
 };

@@ -1,35 +1,23 @@
-import { ChartStateProps } from "./ChartProps";
-import { ChartState } from "./ChartState";
-import { ChartDataSeries } from "./ChartStateData";
-import { SubchartState } from "./ChartStateSubchart";
+import { ChartState } from "./chartstate";
+import { UseChartControllerProps, ChartController } from "../useChartController";
 
-
-export type NEWChartInteractions = {
-  pointer: PointerState;
-  containerSize: ContainerSizeState;
-  action: Action | null; 
-  prev: NEWChartInteractions;
-};
+export type UseChartInteractions = (
+  ContainerRef: React.RefObject<HTMLElement>,
+  PointerContainerRef: React.RefObject<HTMLElement>,
+  ChartState: ChartState,
+  Dispatch: ChartController["Dispatch"],
+  stateProps: UseChartControllerProps
+) => { current: ChartInteractions };
 
 export type ChartInteractions = {
   pointer: PointerState;
   containerSize: ContainerSizeState;
-  calc: ChartState["calc"];
-  rtData?: ChartStateProps["rtData"];
   stateControl: {
     shallUpdate: ("drag" | "pointerMove" | "wheel" | "dragEnd" | "containerResize" | "deps" | "pinch")[];
-    lastMainChartData: ChartDataSeries;
-    prevAction: Action | null;
-    customEffectChartState: CustomEffectChartState | null;
   };
+  action?: Action | null;
 };
-export type ContainerSizeState = {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  init: boolean;
-};
+
 export type PointerState = {
   isHovering: boolean;
   move: { isMoving: boolean; xy: [number, number] };
@@ -55,30 +43,35 @@ export type PointerState = {
     origin: [number, number];
   };
 };
-export type CustomEffectChartState = {
-  subcharts: Omit<SubchartState, "top" | "bottom">[];
-  draw: Omit<ChartState["draw"], "xy"> & { nPixXy: number };
+
+export type ContainerSizeState = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  init: boolean;
 };
 
 export type Action = {
-  drag: DragAction | null;
-  wheel: { type: "wheelScale"; wheelDeltaY: number } | null;
-  containerResize: boolean | null;
-  pinch: PinchAction | null;
+  wheel: WheelAction | null;
+  containerResize: { active: boolean } | null;
+  pointerMove: boolean;
+  pointer: DragAction | PinchAction | null;
   deps: boolean;
   shallUpdateCalcSubcharts?: boolean;
   shallUpdateXaxis: boolean;
+  isRtOutOfRange: boolean;
 };
+
 export type DragAction<T = "translate" | "scale" | "resizeSubchart" | "drawTool" | "editTool"> = {
   start: boolean;
   end: boolean; // unnecessary
   shallUpdate: boolean;
   type: T;
 } & (T extends "resizeSubchart"
-  ? { type: "resizeSubchart"; subchartIdx: number; bottomInitY: number }
+  ? { subchartIdx: number; bottomInitY: number }
   : T extends "editTool"
   ? {
-      type: "editTool";
       subchartIdx: number;
       yaxisIdx: number;
       toolIdx: number;
@@ -90,12 +83,13 @@ export type DragAction<T = "translate" | "scale" | "resizeSubchart" | "drawTool"
       initScaledWidthPerTick: number;
       initTranslatedX: number;
     }
-  : // eslint-disable-next-line @typescript-eslint/ban-types
-    {});
+  : Record<string, never>);
+
 export type WheelAction = {
   type: "wheelScale";
   wheelDeltaY: number;
 };
+
 export type PinchAction = {
   type: "pinchScale";
   initScaledWidthPerTick: number;

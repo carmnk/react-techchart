@@ -1,16 +1,3 @@
-import { Icon } from "@mdi/react";
-import {
-  mdiFileChartOutline,
-  mdiWater,
-  mdiBorderColor,
-  mdiFormatText,
-  mdiGrid,
-  mdiArrowUpDownBold,
-  mdiCrosshairs,
-  mdiChartLine,
-  mdiArrowExpandRight,
-  mdiArrowExpandUp,
-} from "@mdi/js";
 import React from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -22,15 +9,18 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import useTheme from "@mui/material/styles/useTheme";
 import { Theme } from "@mui/material/styles/createTheme";
-
-import { CTreeItem } from "../../Components/CTreeItem";
-import { Colorpicker } from "../../Components/Colorpicker";
-import { CChartMenuStateType } from "../ChartMenu";
-import { CTreeView } from "../../Components/CTreeView";
-import { CIcon } from "../../Components/CIcon";
+import { Icon } from "@mdi/react";
+import { mdiFileChartOutline, mdiWater, mdiBorderColor, mdiFormatText, mdiGrid } from "@mdi/js";
+import { mdiArrowUpDownBold, mdiCrosshairs, mdiArrowExpandRight, mdiArrowExpandUp } from "@mdi/js";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { SubchartTreeItem } from "../Subelements/SubchartTreeItem";
+import { CChartMenuStateType } from "../ChartMenu";
+import { CTreeItem } from "../../Components/CTreeItem";
+import { Colorpicker } from "../../Components/Colorpicker";
+import { CTreeView } from "../../Components/CTreeView";
+import { CIcon } from "../../Components/CIcon";
 import * as T from "../../Types";
+
 export type ToolCategoryType = "Lines" | "Upcoming";
 
 export const SettingsIcon = (props: { iconPath: string; theme: Theme }) => (
@@ -43,17 +33,26 @@ export const SettingsIcon = (props: { iconPath: string; theme: Theme }) => (
   />
 );
 
+const generalSettingsCategorys: { category?: string; icon?: string }[] = [
+  { category: undefined },
+  { category: "xaxis", icon: mdiArrowExpandRight },
+  { category: "yaxis", icon: mdiArrowExpandUp },
+  { category: "grid", icon: mdiGrid },
+  { category: "crosshair", icon: mdiCrosshairs },
+];
+
 export const CMSettings = (props: {
   ChartMenuState: CChartMenuStateType;
-  subCharts: T.ChartState["subCharts"];
-  style: T.ChartState["options"];
+  subcharts: T.ChartState["subcharts"];
+  theme: T.ChartState["theme"];
   onNavigate: (target: CChartMenuStateType["location"]) => void;
-  Dispatch: T.ChartStateHook["Dispatch"];
+  Dispatch: T.ChartController["Dispatch"];
   onSettingsExpand: (id: string) => void;
   data: T.ChartState["data"];
+  fullscreen: boolean;
 }) => {
-  const { subCharts, onNavigate, Dispatch, onSettingsExpand, ChartMenuState, style, data } = props;
-  const theme = useTheme();
+  const { subcharts, onNavigate, Dispatch, onSettingsExpand, ChartMenuState, theme, data, fullscreen } = props;
+  const muiTheme = useTheme();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -64,13 +63,6 @@ export const CMSettings = (props: {
     if (target) onNavigate?.(target);
   };
 
-  const generalSettingsCategorys: { category?: string; icon?: string }[] = [
-    { category: undefined },
-    { category: "xaxis", icon: mdiArrowExpandRight },
-    { category: "yaxis", icon: mdiArrowExpandUp },
-    { category: "grid", icon: mdiGrid },
-    { category: "crosshair", icon: mdiCrosshairs },
-  ];
   const generalSettings = [
     {
       nodeId: "bgcolor",
@@ -78,13 +70,11 @@ export const CMSettings = (props: {
       iconPath: mdiWater,
       labelInfo: (
         <Colorpicker
-          color={style.backgroundColor}
+          color={theme.backgroundColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "backgroundColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "backgroundColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -95,13 +85,11 @@ export const CMSettings = (props: {
       iconPath: mdiWater,
       labelInfo: (
         <Colorpicker
-          color={style.xaxis.fillColor}
+          color={theme.xaxis.fillColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "xAxisFillColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "xAxisFillColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -112,13 +100,11 @@ export const CMSettings = (props: {
       iconPath: mdiBorderColor,
       labelInfo: (
         <Colorpicker
-          color={style.xaxis.strokeColor}
+          color={theme.xaxis.strokeColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "xAxisStrokeColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "xAxisStrokeColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -129,13 +115,11 @@ export const CMSettings = (props: {
       iconPath: mdiFormatText,
       labelInfo: (
         <Colorpicker
-          color={style.xaxis.fontColor}
+          color={theme.xaxis.fontColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "xAxisTextColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "xAxisTextColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -146,13 +130,11 @@ export const CMSettings = (props: {
       iconPath: mdiBorderColor,
       labelInfo: (
         <Colorpicker
-          color={style.yaxis.strokeColor}
+          color={theme.yaxis.strokeColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "yAxisStrokeColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "yAxisStrokeColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -163,13 +145,11 @@ export const CMSettings = (props: {
       iconPath: mdiFormatText,
       labelInfo: (
         <Colorpicker
-          color={style.yaxis.fontColor}
+          color={theme.yaxis.fontColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "yAxisTextColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "yAxisTextColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -180,14 +160,11 @@ export const CMSettings = (props: {
       iconPath: mdiGrid,
       labelInfo: (
         <Checkbox
-          checked={style.grid.useGridX}
+          checked={theme.grid.useGridX}
           size="small"
           style={{ padding: 0, width: 24, height: 24 }}
           onChange={() => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "toggleGridX" as const },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "toggleGridX" } });
           }}
         />
       ),
@@ -199,14 +176,11 @@ export const CMSettings = (props: {
       iconPath: mdiGrid,
       labelInfo: (
         <Checkbox
-          checked={style.grid.useGridY}
+          checked={theme.grid.useGridY}
           size="small"
           style={{ padding: 0, width: 24, height: 24 }}
           onChange={() => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "toggleGridY" },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "toggleGridY" } });
           }}
         />
       ),
@@ -218,13 +192,11 @@ export const CMSettings = (props: {
       iconPath: mdiBorderColor,
       labelInfo: (
         <Colorpicker
-          color={style.grid.strokeColor}
+          color={theme.grid.strokeColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "gridStrokeColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "gridStrokeColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -235,14 +207,11 @@ export const CMSettings = (props: {
       iconPath: mdiCrosshairs,
       labelInfo: (
         <Checkbox
-          checked={style.crosshair.useCrosshair}
+          checked={theme.crosshair.useCrosshair}
           size="small"
           style={{ padding: 0, width: 24, height: 24 }}
           onChange={() => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "toggleCrosshair" },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "toggleCrosshair" } });
           }}
         />
       ),
@@ -254,13 +223,11 @@ export const CMSettings = (props: {
       iconPath: mdiBorderColor,
       labelInfo: (
         <Colorpicker
-          color={style.crosshair.strokeColor}
+          color={theme.crosshair.strokeColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "crosshairStrokeColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "crosshairStrokeColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -271,16 +238,11 @@ export const CMSettings = (props: {
       iconPath: mdiWater,
       labelInfo: (
         <Colorpicker
-          color={style.crosshair.xMarkerBackgroundColor}
+          color={theme.crosshair.xMarkerBackgroundColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: {
-                prop: "crosshairXmarkerBackgroundColor",
-                newValue: color,
-              },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "crosshairXmarkerBackgroundColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -291,13 +253,11 @@ export const CMSettings = (props: {
       iconPath: mdiBorderColor,
       labelInfo: (
         <Colorpicker
-          color={style.crosshair.xMarkerStrokeColor}
+          color={theme.crosshair.xMarkerStrokeColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "crosshairXmarkerStrokeColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "crosshairXmarkerStrokeColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -308,13 +268,11 @@ export const CMSettings = (props: {
       iconPath: mdiFormatText,
       labelInfo: (
         <Colorpicker
-          color={style.crosshair.xMarkerTextColor}
+          color={theme.crosshair.xMarkerTextColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "crosshairXmarkerTextColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "crosshairXmarkerTextColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -325,16 +283,11 @@ export const CMSettings = (props: {
       iconPath: mdiWater,
       labelInfo: (
         <Colorpicker
-          color={style.crosshair.yMarkerBackgroundColor}
+          color={theme.crosshair.yMarkerBackgroundColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: {
-                prop: "crosshairYmarkerBackgroundColor",
-                newValue: color,
-              },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "crosshairYmarkerBackgroundColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -345,13 +298,11 @@ export const CMSettings = (props: {
       iconPath: mdiBorderColor,
       labelInfo: (
         <Colorpicker
-          color={style.crosshair.yMarkerStrokeColor}
+          color={theme.crosshair.yMarkerStrokeColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "crosshairYmarkerStrokeColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "crosshairYmarkerStrokeColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -362,13 +313,11 @@ export const CMSettings = (props: {
       iconPath: mdiFormatText,
       labelInfo: (
         <Colorpicker
-          color={style.crosshair.yMarkerTextColor}
+          color={theme.crosshair.yMarkerTextColor}
           onColorSelected={(color) => {
-            Dispatch({
-              task: "setGeneralProp",
-              params: { prop: "crosshairYmarkerTextColor", newValue: color },
-            });
+            Dispatch({ task: "setGeneralProp", params: { prop: "crosshairYmarkerTextColor", newValue: color } });
           }}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -388,8 +337,8 @@ export const CMSettings = (props: {
             borderRadius: 50,
             padding: 5,
             textTransform: "none",
-            background: theme.palette.secondary.light,
-            color: theme.palette.secondary.contrastText,
+            background: muiTheme.palette.secondary.light,
+            color: muiTheme.palette.secondary.contrastText,
           }}
           onClick={handleClick}
         >
@@ -409,6 +358,7 @@ export const CMSettings = (props: {
             vertical: "top",
             horizontal: "right",
           }}
+          disablePortal={fullscreen}
         >
           <MenuItem onClick={() => handleClose("indicators")}>Indicator</MenuItem>
           <MenuItem onClick={() => handleClose("tools")}>Tool</MenuItem>
@@ -422,11 +372,11 @@ export const CMSettings = (props: {
             <CIcon
               path={mdiFileChartOutline}
               size={"32px"}
-              color={theme.palette.secondary.contrastText}
-              background={theme.palette.secondary.main}
+              color={muiTheme.palette.secondary.contrastText}
+              background={muiTheme.palette.secondary.main}
             />
           }
-          bgColorSelected={theme.palette.primary.light}
+          bgColorSelected={muiTheme.palette.primary.light}
           typographyVariant="h6"
           onClick={() => {
             const id = "1";
@@ -444,7 +394,7 @@ export const CMSettings = (props: {
                     labelText={setting.labelText}
                     typographyVariant="body1"
                     labelInfo={setting.labelInfo}
-                    labelIcon={<SettingsIcon iconPath={setting.iconPath} theme={theme} />}
+                    labelIcon={<SettingsIcon iconPath={setting.iconPath} theme={muiTheme} />}
                   />
                 ))
             ) : (
@@ -454,10 +404,10 @@ export const CMSettings = (props: {
                 labelText={cat.category ?? ""}
                 labelIcon={
                   <CIcon
-                    path={cat.icon}
+                    path={cat.icon as string}
                     size={"32px"}
-                    color={theme.palette.secondary.contrastText}
-                    background={theme.palette.primary.main}
+                    color={muiTheme.palette.secondary.contrastText}
+                    background={muiTheme.palette.primary.main}
                   />
                 }
                 onClick={() => {
@@ -473,7 +423,7 @@ export const CMSettings = (props: {
                       labelText={setting.labelText}
                       typographyVariant="body1"
                       labelInfo={setting.labelInfo}
-                      labelIcon={<SettingsIcon iconPath={setting.iconPath} theme={theme} />}
+                      labelIcon={<SettingsIcon iconPath={setting.iconPath} theme={muiTheme} />}
                     />
                   ))}
               </CTreeItem>
@@ -481,14 +431,14 @@ export const CMSettings = (props: {
           )}
         </CTreeItem>
         <SubchartTreeItem
-          subcharts={subCharts}
+          subcharts={subcharts}
           data={data}
           subchartIdx={0}
           Dispatch={Dispatch}
           onSettingsExpand={onSettingsExpand}
+          fullscreen={fullscreen}
         />
         <DragDropContext
-          // onDragStart={}
           onDragEnd={(res) => {
             if (!res.destination?.index) return;
             Dispatch({
@@ -506,31 +456,32 @@ export const CMSettings = (props: {
                 {...provided.droppableProps}
                 ref={provided.innerRef}
                 sx={{
-                  background: snapshot.isDraggingOver ? theme.palette.primary.light : "transparent",
-                  borderTopRightRadius: theme.spacing(2),
-                  borderBottomRightRadius: theme.spacing(2),
+                  background: snapshot.isDraggingOver ? muiTheme.palette.primary.light : "transparent",
+                  borderTopRightRadius: muiTheme.spacing(2),
+                  borderBottomRightRadius: muiTheme.spacing(2),
                 }}
               >
-                {subCharts.slice(1).map((subchart, subchartIdxShifted) => {
+                {subcharts.slice(1).map((subchart, subchartIdxShifted) => {
                   const subchartIdx = subchartIdxShifted + 1;
                   return (
                     <Draggable key={`sub-${subchartIdx}`} draggableId={`sub-${subchartIdx}`} index={subchartIdx}>
                       {(provided, snapshot) => {
                         return (
                           <SubchartTreeItem
-                            subcharts={subCharts}
+                            subcharts={subcharts}
                             data={data}
                             subchartIdx={subchartIdx}
                             Dispatch={Dispatch}
                             onSettingsExpand={onSettingsExpand}
                             ref={provided.innerRef}
+                            fullscreen={fullscreen}
                             {...provided.draggableProps}
                             additionalLabelInfo={
                               <IconButton size="small" {...provided.dragHandleProps}>
                                 <Icon
                                   path={mdiArrowUpDownBold}
                                   size={1}
-                                  color={theme.palette.mode === "light" ? "#333" : "#fff"}
+                                  color={muiTheme.palette.mode === "light" ? "#333" : "#fff"}
                                 />
                               </IconButton>
                             }

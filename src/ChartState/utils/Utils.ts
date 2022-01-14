@@ -70,7 +70,7 @@ export const getDataSeriesMinY = (
 export const snapPixYToDataset = (
   pixY: number,
   dataset: T.Dataset | undefined,
-  subcharts: T.ChartState["subCharts"] | null,
+  subcharts: T.ChartState["subcharts"] | null,
   subchartIdx: number,
   yaxisIdx: number,
   calcSubcharts: T.ChartState["calc"]["subcharts"],
@@ -120,7 +120,7 @@ export const snapPixYToDataset = (
 
 export const getSubchartIdxByPixXy = (
   pixXy: [number, number] | undefined,
-  subcharts: T.ChartState["subCharts"]
+  subcharts: T.ChartState["subcharts"]
 ): number | null => {
   if (!pixXy || !subcharts) return null;
   const activeSubchart = subcharts.find((val) => pixXy[1] >= val.top && pixXy[1] < val.bottom);
@@ -132,7 +132,7 @@ export const getSubchartIdxByPixXy = (
 
 export const snapToolsByXy = (
   pixXy: [number, number] | undefined,
-  subcharts: T.ChartState["subCharts"],
+  subcharts: T.ChartState["subcharts"],
   xaxis: T.CalcXaxisState,
   calc: T.ChartState["calc"]
 ): { subchartIdx: number; yaxisIdx: number; toolIdx: number; toolPtIdx: number }[] => {

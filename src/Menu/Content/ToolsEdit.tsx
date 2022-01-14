@@ -7,26 +7,28 @@ import useTheme from "@mui/material/styles/useTheme";
 import { ToolsSubMenu } from "./ToolsSubMenu";
 
 export const ToolsEdit = (props: {
-  subCharts: T.ChartState["subCharts"];
-  Dispatch: T.ChartStateHook["Dispatch"];
+  subcharts: T.ChartState["subcharts"];
+  Dispatch: T.ChartController["Dispatch"];
   onNavigate: (target: CChartMenuStateType["location"]) => void;
+  fullscreen: boolean;
 }) => {
-  const { subCharts, Dispatch, onNavigate } = props;
+  const { subcharts, Dispatch, onNavigate, fullscreen } = props;
   const theme = useTheme();
   return (
     <React.Fragment>
-      <ToolsSubMenu subCharts={subCharts} location="editTool" onNavigate={onNavigate} theme={theme} />
+      <ToolsSubMenu subcharts={subcharts} location="editTool" onNavigate={onNavigate} theme={theme} />
       <CTreeView>
-        {subCharts.map((subchart, subchartIdx) =>
+        {subcharts.map((subchart, subchartIdx) =>
           subchart.yaxis.map((yaxis, yaxisIdx) =>
             yaxis.tools.map((tool, toolIdx) => (
               <ChartMenuToolTreeItem
                 key={`editIndicator-sub-${subchartIdx}-yaxis-${yaxisIdx}-graph-${toolIdx}`}
-                subCharts={subCharts}
+                subcharts={subcharts}
                 Dispatch={Dispatch}
                 subchartIdx={subchartIdx}
                 yaxisIdx={yaxisIdx}
                 toolIdx={toolIdx}
+                fullscreen={fullscreen}
               />
             ))
           )

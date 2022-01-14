@@ -9,24 +9,12 @@ export const GraphLabel = (props: {
   name: string;
   dataset: T.Dataset;
   decimals?: number;
-  onClick: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    graphIdx: number,
-    subchartIdx: number
-  ) => any;
+  onClick: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, graphIdx: number, subchartIdx: number) => void;
   subchartIdx: number;
   graphIdx: number;
   graphTypes?: T.IndicatorModel["graphTypes"];
 }) => {
-  const {
-    dataset,
-    name,
-    decimals,
-    onClick,
-    subchartIdx,
-    graphIdx,
-    graphTypes,
-  } = props;
+  const { dataset, name, decimals, onClick, subchartIdx, graphIdx, graphTypes } = props;
   const handleClick = React.useCallback(
     (e) => {
       onClick?.(e, subchartIdx, graphIdx);
@@ -39,22 +27,13 @@ export const GraphLabel = (props: {
     <Button
       style={{ textTransform: "none", textAlign: "left" }}
       onClick={handleClick}
-      startIcon={
-        <Icon
-          path={
-            T.isIndicatorDataset(dataset) ? mdiChartBellCurve : mdiChartLine
-          }
-          size={1.0}
-        />
-      }
+      startIcon={<Icon path={T.isIndicatorDataset(dataset) ? mdiChartBellCurve : mdiChartLine} size={1.0} />}
     >
       {T.isIndicatorDataset(dataset) ? (
         <Typography variant="body2">{`${name}:${
           dataset.prices
             .map((price, pIdx) =>
-              price &&
-              decimals &&
-              ["line", "bars"].includes(graphTypes?.[pIdx]?.type ?? "")
+              price && decimals && ["line", "bars"].includes(graphTypes?.[pIdx]?.type ?? "")
                 ? price?.toFixed(decimals)
                 : null
             )

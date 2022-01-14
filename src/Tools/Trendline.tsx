@@ -1,10 +1,11 @@
 import React from "react";
+import dequal from "lodash/isEqual";
 import { Circle, Line } from "react-konva";
 import { mdiSetLeft } from "@mdi/js";
 import * as T from "../Types";
 
 export type CTrendlineProps = {
-  subcharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   subchartIdx: number;
   // yaxisIdx: number;
   // toolIdx: number;
@@ -40,7 +41,7 @@ export const CTrendlineComponent = (props: CTrendlineProps) => {
   const sortedPixXy = PixXy[0][0] > PixXy[1][0] ? [PixXy[1], PixXy[0]] : PixXy;
   const adjustedPixXy = [[...sortedPixXy[0]], [...sortedPixXy[1]]];
 
-  if (modeInt === "trendline" || mode === "infiniteLine") {
+  if ((modeInt === "trendline" || mode === "infiniteLine") && !dequal(adjustedPixXy[0], adjustedPixXy[1])) {
     const dx = adjustedPixXy[1][0] - adjustedPixXy[0][0];
     const dy = adjustedPixXy[1][1] - adjustedPixXy[0][1];
     const slope = dy / dx;
@@ -56,7 +57,6 @@ export const CTrendlineComponent = (props: CTrendlineProps) => {
       adjustedPixXy[0][1] = pixYSrc;
     }
   }
-  // console.log("TLINE renders");
   return (
     <React.Fragment>
       <Line

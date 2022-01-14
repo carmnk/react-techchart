@@ -11,11 +11,7 @@ export const ConditionalMuiThemeProvider: React.FC<{
 
   return (
     <React.Fragment>
-      {!disableTheme ? (
-        <ThemeProvider theme={theme}>{props.children}</ThemeProvider>
-      ) : (
-        props.children
-      )}
+      {!disableTheme ? <ThemeProvider theme={theme}>{props.children}</ThemeProvider> : props.children}
     </React.Fragment>
   );
 };

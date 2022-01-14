@@ -4,16 +4,16 @@ import { isNullish } from "../utils/Basics";
 import { defaultTools } from "./DefaultTools";
 
 export type DrawToolProps = {
-  subcharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   containerSize: T.ChartState["containerSize"];
   draw: T.ChartState["draw"];
   // pointer: T.ChartState["pointer"];
   calc: T.ChartState["calc"];
-  drawStyle: T.ChartState["options"]["draw"];
+  drawTheme: T.ChartState["theme"]["draw"];
 };
 
 export const DrawTool = (props: DrawToolProps) => {
-  const { subcharts, draw, calc, containerSize, drawStyle } = props;
+  const { subcharts, draw, calc, containerSize, drawTheme } = props;
   const { pointer: calcPointer, subcharts: calcSubcharts, xaxis: calcXaxis, yToPix, pixToY } = calc;
   const { xToPix } = calcXaxis;
 
@@ -45,23 +45,21 @@ export const DrawTool = (props: DrawToolProps) => {
   );
 
   return (
-    (draw.isDrawing &&
-      DrawTool &&
-      !isNullish(subchartIdx) && (
-        <DrawTool
-          subcharts={subcharts}
-          subchartIdx={subchartIdx}
-          xy={draw.xy}
-          drawPixXy={drawPixXy}
-          containerSize={containerSize}
-          calcXaxis={calcXaxis}
-          calcSubcharts={calcSubcharts}
-          yToPix={yToPix}
-          pixToY={pixToY}
-          style={drawStyle}
-          {...additionalDrawToolProps}
-        />
-      )) ||
+    (draw.isDrawing && DrawTool && !isNullish(subchartIdx) && (
+      <DrawTool
+        subcharts={subcharts}
+        subchartIdx={subchartIdx}
+        xy={draw.xy}
+        drawPixXy={drawPixXy}
+        containerSize={containerSize}
+        calcXaxis={calcXaxis}
+        calcSubcharts={calcSubcharts}
+        yToPix={yToPix}
+        pixToY={pixToY}
+        style={drawTheme}
+        {...additionalDrawToolProps}
+      />
+    )) ||
     null
   );
 };

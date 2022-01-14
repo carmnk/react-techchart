@@ -1,6 +1,5 @@
-export { CChart } from "./CChart";
-export { CChart as default } from "./CChart";
-export { useChartState } from "./ChartState/";
+export { Chart } from "./Chart";
+export { useChartController } from "./ChartState/";
 export * as Types from "./Types";
 export { muiTheme, muiDarkTheme } from "./MuiTheme";
 export {
@@ -13,7 +12,14 @@ export {
   iSMA,
   iVolume,
   defaultIndicators,
-  createIRSI,
+  ATR,
+  EMA,
+  KAMA,
+  MACD,
+  OBV,
+  RSI,
+  SMA,
+  Volume,
 } from "./Indicators";
 export {
   prefersDarkMode,
@@ -52,9 +58,6 @@ export {
   isNullish,
   includesOne,
   getDecimals,
-  colorNameToHex,
-  colorNameToRGB,
-  colorNames,
   hexToRgb,
   setStateProp,
   addStateProp,

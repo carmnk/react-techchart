@@ -1,14 +1,14 @@
 import * as T from "../../Types";
-import { getIndicatorsDependantIndicatorDatas } from "../Reducer/DataFactory";
-import { calculatePixYDataset } from "./CalcSubcharts";
+import { getIndicatorsDependantIndicatorDatas } from "../Factory/IndicatorDataFactory";
 
 export const getRtTicks = (
-  rtData: T.ChartStateProps["rtData"] | undefined,
+  rtData: T.UseChartControllerProps["rtData"] | undefined,
   data: T.ChartState["data"],
-  subcharts: T.ChartState["subCharts"],
+  subcharts: T.ChartState["subcharts"],
   calc: T.ChartState["calc"]
 ) => {
-  if (!rtData || !calc.yToPix) return [];
+  const maingraphId = subcharts?.[0]?.yaxis?.[0]?.graphs?.[0]?.dataId;
+  if (!rtData || !calc.yToPix || !maingraphId) return [];
   const lastTick =
     calc.subcharts?.[0]?.yaxis?.[0]?.graphs?.[0]?.curTicks?.[
       calc.subcharts?.[0]?.yaxis?.[0]?.graphs?.[0]?.curTicks.length - 1
@@ -17,7 +17,7 @@ export const getRtTicks = (
     (calc.yToPix &&
       rtData &&
       lastTick &&
-      rtData.reduce<T.RealtimeDataTick[]>((acc, cur, idx) => {
+      [{ data: rtData, dataId: maingraphId }].reduce<T.RealtimeDataTick[]>((acc, cur) => {
         const dataIdx = data.findIndex((dat) => dat.id === cur.dataId);
         return [
           ...acc,
@@ -40,7 +40,7 @@ export const getRtTicks = (
   const dependantIndicatorIds = rtChartTicks
     .map((rtChart) => getIndicatorsDependantIndicatorDatas(data, rtChart.dataId))
     .flat();
-  const rtTicks = dependantIndicatorIds.reduce<T.RealtimeDataTick[]>((acc, curId, idx) => {
+  const rtTicks = dependantIndicatorIds.reduce<T.RealtimeDataTick[]>((acc, curId) => {
     const indicatorData = data.find((d) => d.id === curId && d.type === "indicator");
     if (!indicatorData || indicatorData?.type !== "indicator") return acc;
     const iFn = indicatorData.indicator.indicatorFn as T.DataSeriesIndicatorFn;
@@ -53,10 +53,10 @@ export const getRtTicks = (
     const completePrevData = [...(indicatorData.data ?? [])] as T.IndicatorDataset[];
     if (!iFn || !complSrcDataseries?.length || !lastTick) return acc;
     const newDataseries = iFn({
-      chartData: complSrcDataseries,
-      prevData: completePrevData,
+      dataseries: complSrcDataseries,
+      prev: completePrevData,
       ...params.reduce((accObj, curParam) => ({ ...accObj, [curParam.name]: curParam.val }), {}),
-    }).slice(indicatorData.data.length - 1);
+    }).slice(indicatorData.data.length - 1) as T.IndicatorDataset[];
 
     const newRtDataTick: T.RealtimeDataTick = {
       data: newDataseries.map((dataset, dIdx) => ({
@@ -75,29 +75,34 @@ export const getRtTicks = (
 };
 
 export const isRtDataOutOfRange = (
-  rtData: T.ChartStateProps["rtData"],
-  subcharts: T.ChartState["subCharts"],
+  rtData: T.UseChartControllerProps["rtData"],
+  subcharts: T.ChartState["subcharts"],
   calc: T.ChartState["calc"]
 ) => {
   let isRtDataOutOfRange = false;
+  const maingraphId = subcharts?.[0]?.yaxis?.[0]?.graphs?.[0]?.dataId;
   rtData &&
     rtData.length > 0 &&
     subcharts.length === calc.subcharts.length &&
     calc.xaxis.xUnlimited > calc.xaxis.xLast && // and not rtData.length
     calc.subcharts.forEach((calcSubchart, sIdx) => {
-      const subchart = subcharts[sIdx];
-      const filteredRtData =
-        rtData
-          ?.filter((rtDat) =>
-            subchart.yaxis
-              .map((y) => y.graphs.map((g) => g.dataId))
-              .flat()
-              .includes(rtDat.dataId)
-          )
-          .map((rtDat) => ({
-            ...rtDat,
-            data: rtDat.data.slice(1, calc.xaxis.xUnlimited - calc.xaxis.xLast + 1),
-          })) ?? [];
+      // const subchart = subcharts[sIdx];
+      // const filteredRtData =
+      //   [rtData]
+      //     ?.filter((rtDat) =>
+      //       subchart.yaxis
+      //         .map((y) => y.graphs.map((g) => g.dataId))
+      //         .flat()
+      //         .includes(rtDat.dataId)
+      //     )
+      //     .map((rtDat) => ({
+      //       ...rtDat,
+      //       data: rtDat.data.slice(1, calc.xaxis.xUnlimited - calc.xaxis.xLast + 1),
+      //     })) ?? [];
+      const filteredRtData = [
+        { data: rtData.slice(1, calc.xaxis.xUnlimited - calc.xaxis.xLast + 1), dataId: maingraphId },
+      ];
+      if (sIdx !== 0) return;
       if (filteredRtData.length === 0) return;
       const curMax = Math.max(...calcSubchart.yaxis.map((cyaxis) => cyaxis.yMaxExact));
       const rtMax =
@@ -123,18 +128,51 @@ export const isRtDataOutOfRange = (
             );
       if (filteredRtData && (rtMax > curMax || rtMin < curMin)) {
         isRtDataOutOfRange = true;
-        console.log(
-          "RT-DATA OUT OF Y-RANGE! -> rtMax:",
-          rtData,
-          rtMax,
-          ", rtMin:",
-          rtMin,
-          ", curMax:",
-          curMax,
-          ", curMin:",
-          curMin
-        );
       }
     });
   return isRtDataOutOfRange;
+};
+
+// only post calculation !
+export const calculatePixYDataset = (
+  dataset: T.Dataset,
+  dataId: string,
+  data: T.ChartState["data"],
+  subcharts: T.ChartState["subcharts"],
+  yToPix: T.ChartState["calc"]["yToPix"]
+): T.PixYDataset | null => {
+  const paths = subcharts
+    .map((subchart, sIdx) =>
+      subchart.yaxis
+        .map((yaxis, yIdx) =>
+          yaxis.graphs.map((graph, gIdx) =>
+            graph.dataId === dataId ? { subchartIdx: sIdx, yaxisIdx: yIdx, graphIdx: gIdx } : null
+          )
+        )
+        .flat()
+    )
+    .flat()
+    .filter((val) => val !== null);
+  const path = paths?.[0];
+  if (!path || !yToPix) return null;
+  const yToPixSpec = (price: number) => yToPix(price, path.subchartIdx, path.yaxisIdx);
+  const graphTypes = (data.find((dat) => dat.id === dataId && dat.type === "indicator") as T.IndicatorData | undefined)
+    ?.indicator?.graphTypes;
+  const pixY = T.isIndicatorDataset(dataset)
+    ? {
+        pixPrices: dataset.prices.map((price, pIdx) =>
+          price && ["line", "bars"].includes(graphTypes?.[pIdx]?.type ?? "") ? yToPixSpec(price) : null
+        ),
+      }
+    : T.isCandleChartDataset(dataset)
+    ? {
+        pixOpen: yToPixSpec(dataset.open),
+        pixHigh: yToPixSpec(dataset.high),
+        pixLow: yToPixSpec(dataset.low),
+        pixClose: yToPixSpec(dataset.close),
+      }
+    : T.isLineChartDataset(dataset)
+    ? { pixClose: yToPixSpec(dataset.close) }
+    : null;
+  return pixY;
 };

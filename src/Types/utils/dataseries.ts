@@ -1,35 +1,3 @@
-import { ChartPeriod, NumericDate } from "./ChartTime";
-import { IndicatorModel } from "./IndicatorModel";
-
-// ChartState Data Model (ChartState.data)
-export type Data = ChartData | IndicatorData;
-
-export type ChartData = {
-  id: string;
-  name: string;
-  type: "chart";
-  data: ChartDataSeries;
-  decimals: number;
-  dateStat: ChartDateStat | null;
-  meta: {
-    chartPeriod: ChartPeriod | null;
-    dataPeriod: number;
-    dataPeriodConfidence: number;
-    type: "candlechart" | "linechart";
-  };
-}; 
-
-export type IndicatorData = {
-  id: string;
-  name: string;
-  fullName: string;
-  type: "indicator";
-  data: IndicatorDataSeries;
-  decimals: number;
-  indicator: IndicatorModel;
-  indSrcId: string;
-};
-
 // types for single datasets
 export type LineChartDataset = {
   date: Date;
@@ -52,6 +20,20 @@ export type IndicatorDataset = {
 };
 
 export type Dataset = ChartDataset | IndicatorDataset;
+
+// doesn't exclude datasets with close property (like CandleChartDataset -> e.g. a CandleChartDataset will also return true)
+export const isLineChartDataset = (dataset: Dataset): dataset is LineChartDataset => {
+  if ("close" in dataset) return true;
+  return false;
+};
+export const isVolumeDataset = (dataset: Dataset): dataset is ChartDataset & { volume: number } => {
+  if ("volume" in dataset) return true;
+  return false;
+};
+export const isIndicatorDataset = (dataset: Dataset): dataset is IndicatorDataset => {
+  if ("prices" in dataset) return true;
+  return false;
+};
 
 type LineChartPixYDataset = { pixClose: number };
 type CandleChartPixYDataset = { pixClose: number; pixOpen: number; pixHigh: number; pixLow: number };
@@ -81,19 +63,6 @@ export const isCandleChartDataset = (dataset: Dataset): dataset is CandleChartDa
   if ("open" in dataset && "high" in dataset && "low" in dataset && "close" in dataset) return true;
   return false;
 };
-// doesn't exclude datasets with close property (like CandleChartDataset -> e.g. a CandleChartDataset will also return true)
-export const isLineChartDataset = (dataset: Dataset): dataset is LineChartDataset => {
-  if ("close" in dataset) return true;
-  return false;
-};
-export const isVolumeDataset = (dataset: Dataset): dataset is ChartDataset & { volume: number } => {
-  if ("volume" in dataset) return true;
-  return false;
-};
-export const isIndicatorDataset = (dataset: Dataset): dataset is IndicatorDataset => {
-  if ("prices" in dataset) return true;
-  return false;
-};
 
 // types for dataseries
 export type ChartDataSeries = ChartDataset[];
@@ -109,30 +78,3 @@ export const isChartDataSeries = (dataSeries: DataSeries): dataSeries is ChartDa
   const iDataSeries = (dataSeries as ChartDataSeries)[dataSeries.length - 1];
   return !!iDataSeries.close && !!iDataSeries.date;
 };
-
-export type ChartDateStat = {
-  years: {
-    year: number;
-    months: {
-      month: number;
-      weeks: { week: number; days: { day: number; hours: { hour: number; minutes: { minute: number }[] }[] }[] }[];
-    }[];
-  }[];
-  accAmt: {
-    years: number;
-    months: number;
-    weeks: number;
-    days: number;
-    hours: number;
-    minutes: number;
-    lastData: Partial<NumericDate> | null;
-  };
-};
-
-export type MinuteStat = { minute: number }[];
-export type HourStat = { hour: number; minutes: MinuteStat }[];
-export type DayStat = { day: number; hours: HourStat }[];
-export type WeekStat = { week: number; days: DayStat }[];
-export type MonthStat = { month: number; weeks: WeekStat }[];
-export type YearStat = { year: number; months: MonthStat }[];
-export type PeriodStat = YearStat | MonthStat | WeekStat | DayStat | HourStat | MinuteStat;

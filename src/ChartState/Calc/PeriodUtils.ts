@@ -14,7 +14,7 @@ type DateStatIdxs = {
 export const getTickPeriod = (
   date: Date,
   dateStat: T.ChartData["dateStat"],
-  chartPeriod: T.ChartPeriod, 
+  chartPeriod: T.ChartPeriod,
   optPeriod: T.ChartPeriod
 ): T.PeriodName | null => {
   if (!chartPeriod || !optPeriod || !dateStat) return null;
@@ -46,8 +46,8 @@ export const getTickPeriod = (
   const isNewIntraday = !hourIdx && !minuteIdx; // hourIdx, minuteIdx === 0 or undefined
   const monthMultiplys = optPeriodName === "months" ? (optMultiply as 1 | 2 | 3 | 6) : 1;
   const weekMultiplys = optPeriodName === "weeks" ? (optMultiply as 1 | 2) : 1;
-  const dayMultiplys = optPeriodName === "days" ? (optMultiply as any) : 1;
-  const hourMultiplys = optPeriodName === "hours" ? (optMultiply as any) : 1;
+  const dayMultiplys = optPeriodName === "days" ? optMultiply : 1;
+  const hourMultiplys = optPeriodName === "hours" ? optMultiply : 1;
 
   return isNewYear(numericDate, dateStat, statIdxs) && !hourIdx && !minuteIdx
     ? "years"
@@ -58,14 +58,14 @@ export const getTickPeriod = (
       isNewIntraday
     ? "weeks"
     : !["years", "months", "weeks"].includes(optPeriodName) &&
-      isNewDay(numericDate, dateStat, statIdxs, dayMultiplys) &&
+      isNewDay(numericDate, dateStat, statIdxs, dayMultiplys as 1 | 2) &&
       isNewIntraday
     ? "days"
     : !["years", "months", "weeks", "days"].includes(optPeriodName) &&
-      isNewHour(numericDate, dateStat, statIdxs, hourMultiplys) &&
+      isNewHour(numericDate, dateStat, statIdxs, hourMultiplys as 1 | 2 | 4 | 12) &&
       !minuteIdx
     ? "hours"
-    : optPeriodName === "minutes" && isNewMinute(numericDate, dateStat, statIdxs, optMultiply as any)
+    : optPeriodName === "minutes" && isNewMinute(numericDate, dateStat, statIdxs, optMultiply as 1 | 2 | 4 | 12)
     ? "minutes"
     : null;
 };
@@ -146,7 +146,7 @@ const isNewIsoWeek = (
         return false;
       return true;
     }
-  } 
+  }
   return false;
 };
 
@@ -200,7 +200,7 @@ const isNewHour = (
     hourIdx === -1 ||
     !hourStat ||
     isNullish(hourIdx)
-  ) 
+  )
     return false;
 
   if (hourIdx % periodMultiply !== 0) return false;

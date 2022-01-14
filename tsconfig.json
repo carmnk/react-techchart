@@ -16,11 +16,13 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "noImplicitAny": true,
-    // "incremental": true,
+    
     "allowSyntheticDefaultImports": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     // "preserveSymlinks": true
     // "outFile": "out.js"
+
+    // "incremental": true,
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules/**"]

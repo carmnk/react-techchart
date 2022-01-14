@@ -6,15 +6,16 @@ import { IndicatorsSubMenu } from "./IndicatorsSubMenu";
 import useTheme from "@mui/material/styles/useTheme";
 import { CChartMenuStateType } from "../ChartMenu";
 
-export const IndicatorsEdit = (props: {
-  subCharts: T.ChartState["subCharts"];
+export const IndicatorsEditComponent = (props: {
+  subcharts: T.ChartState["subcharts"];
   onNavigate: (target: CChartMenuStateType["location"]) => void;
   location: CChartMenuStateType["location"];
-  Dispatch: T.ChartStateHook["Dispatch"];
-  settings?: T.ChartStateProps["settings"];
+  Dispatch: T.ChartController["Dispatch"];
+  settings?: T.UseChartControllerProps["settings"];
   data: T.ChartState["data"];
+  fullscreen: boolean;
 }) => {
-  const { subCharts, Dispatch, data, location, onNavigate } = props;
+  const { subcharts, Dispatch, data, location, onNavigate, fullscreen } = props;
   const theme = useTheme();
   const amtIndicators = data.filter((val) => val.type === "indicator").length;
 
@@ -22,18 +23,19 @@ export const IndicatorsEdit = (props: {
     <React.Fragment>
       <IndicatorsSubMenu location={location} onNavigate={onNavigate} theme={theme} amtIndicators={amtIndicators} />
       <CTreeView>
-        {subCharts.map((subchart, subchartIdx) =>
+        {subcharts.map((subchart, subchartIdx) =>
           subchart.yaxis.map((yaxis, yaxisIdx) =>
             yaxis.graphs.map((graph, graphIdx) =>
               T.isIndicatorGraph(graph) ? (
                 <ChartMenuIndiGraphTreeItem
                   key={`editIndicator-sub-${subchartIdx}-yaxis-${yaxisIdx}-graph-${graphIdx}`}
-                  subCharts={subCharts}
+                  graphs={subcharts?.[subchartIdx]?.yaxis?.[0]?.graphs}
                   Dispatch={Dispatch}
                   subchartIdx={subchartIdx}
                   yaxisIdx={yaxisIdx}
                   graphIdx={graphIdx}
                   data={data}
+                  fullscreen={fullscreen}
                 />
               ) : null
             )
@@ -43,3 +45,4 @@ export const IndicatorsEdit = (props: {
     </React.Fragment>
   );
 };
+export const IndicatorsEdit = React.memo(IndicatorsEditComponent);

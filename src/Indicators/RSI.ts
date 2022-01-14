@@ -1,35 +1,36 @@
 import * as T from "../Types";
 import { isNullish } from "../utils/Basics";
 
-export const createIRSI = (params: { period: number }) => ({
-  ...iRSI,
-  params: iRSI.params.map((param) =>
-    param.name === "period" && !isNullish(params?.period) ? { ...param, val: params.period } : param
+export const iRSI = (period?: number) => ({
+  ...RSI,
+  params: RSI.params.map((param) =>
+    param.name === "period" && !isNullish(period) ? { ...param, val: period } : param
   ),
 });
-export const iRSI: T.IndicatorModel = {
+
+export const RSI: T.IndicatorModel = {
   name: "RSI",
   category: "Oszillator",
   params: [{ name: "period", val: 14 }],
   default: {
-    params: [{ name: "period", val: 14 }],
+    params: [{ name: "period", val: 14, type: "number" }],
     newSubchart: true,
     decimals: 2,
     fixedYScale: [0, 100],
-    graphProps: [{ name: "areaTresholds", val: { lower: 25, upper: 75 } }],
+    // graphProps: [{ name: "areaTresholds", val: { lower: 25, upper: 75 } }],
   },
   graphTypes: [{ type: "line" }],
   indicatorFnType: "chartSeries",
 
   indicatorFn: (params: {
-    chartData: T.ChartDataset[];
-    prevData: T.IndicatorDataSeries;
+    dataseries: T.ChartDataset[];
+    prev: T.IndicatorDataSeries;
     period?: number;
     // applyOn: "open" | "close" | "high" | "low" = "close"
   }) => {
-    const { chartData: srcChartData, prevData, period = 14 } = params;
-    const indicatorData: T.IndicatorDataset[] = prevData ? prevData : [];
-    for (let i = prevData.length; i < srcChartData.length; i++) {
+    const { dataseries: srcChartData, prev, period = 14 } = params;
+    const indicatorData: T.IndicatorDataset[] = prev ? prev : [];
+    for (let i = prev.length; i < srcChartData.length; i++) {
       if (i === 0) {
         indicatorData.push({ prices: [null, null, null], date: srcChartData[i].date });
         continue;

@@ -1,15 +1,19 @@
-import { ChartDataset } from ".";
-import { ChartTheme, InputData } from "./ChartProps";
-import { ChartState } from "./ChartState";
-import { IndicatorData, IndicatorDataSeries } from "./ChartStateData";
-import { DataSeries } from "./ChartStateData";
+import { UseChartControllerProps, ChartTheme, InputData } from "./useChartController";
+import { ChartState } from "./chartstate/chartstate";
+import { IndicatorData } from "./chartstate/data";
+import { ChartInteractions } from "./chartstate/useChartInteractions";
+import { DataSeries, IndicatorDataSeries, ChartDataset } from "./utils/dataseries";
+import { DeepPartial } from "./utils/utils";
+import type { AlertProps } from "@mui/material/Alert";
+
+export type ChartStateDispatch<Action extends ReducerTask = ReducerTask> = React.Dispatch<ReducerAction<Action>>;
 
 export type ReducerTask =
   | "addSubchart"
   | "swapSubcharts"
   | "addGraph"
   | "clearChart"
-  | "draw"
+  | "startDrawing"
   | "updateInteractionState"
   | "removeSubchart"
   | "removeGraph"
@@ -17,12 +21,13 @@ export type ReducerTask =
   | "setGeneralProp"
   | "setGraphProp"
   | "setToolProp"
-  | "addData"
+  | "initData"
   | "modifyIndicatorData"
-  // | "toggleDarkMode"
   | "modifyChartData"
   | "setTheme"
-  | "";
+  | "setPointerEventsIntern"
+  | "addSnackbarMessage"
+  | "removeSnackbarMessage";
 
 export type ReducerSetGeneralProps =
   | "backgroundColor"
@@ -35,7 +40,6 @@ export type ReducerSetGeneralProps =
   | "toggleGridX"
   | "toggleGridY"
   | "toggleFullscreen"
-  // | "toggleDarkMode"
   | "toggleCrosshair"
   | "crosshairStrokeColor"
   | "crosshairXmarkerStrokeColor"
@@ -49,6 +53,7 @@ export type ReducerSetGraphProps =
   | "strokeColor"
   | "candleChartColor"
   | "candleUpColor"
+  | "candleDownColor"
   | "candleStrokeColor"
   | "candleWickStrokeColor"
   | "chartType"
@@ -61,9 +66,9 @@ export type ReducerAction<T extends ReducerTask = ReducerTask> = {
   params: T extends "setGeneralProp"
     ? {
         prop: ReducerSetGeneralProps;
-        newValue: any;
+        newValue?: any;
       }
-    : T extends "addData"
+    : T extends "initData"
     ? {
         datas: InputData[];
       }
@@ -129,27 +134,28 @@ export type ReducerAction<T extends ReducerTask = ReducerTask> = {
     ? { subchartIdx1: number; subchartIdx2: number }
     : T extends "removeTool"
     ? { subchartIdx: number; yaxisIdx: number; toolIdx: number }
-    : T extends "draw"
+    : T extends "startDrawing"
     ? {
-        type?: ChartState["draw"]["type"];
-        xy?: [number, number];
-        subchartIdx: number;
+        type: ChartState["draw"]["type"];
       }
     : T extends "updateInteractionState"
     ? {
-        newState: ChartState;
+        Interactions: ChartInteractions;
+        RtData: { rtData: UseChartControllerProps["rtData"]; isRtOutOfRange: boolean };
       }
     : T extends "clearChart"
     ? {
         mode: "all" | "indicators" | "tools";
       }
-    // : T extends "toggleDarkMode"
-    // ? {}
     : T extends "setTheme"
     ? {
-        theme: ChartTheme;
+        theme: DeepPartial<ChartTheme>;
       }
-    : any;
+    : T extends "setPointerEventsIntern"
+    ? { disablePointerEvents: boolean }
+    : T extends "addSnackbarMessage"
+    ? { text: string; type: AlertProps["severity"] }
+    : undefined;
 };
 
 export const isSetGeneralPropAction = (action: ReducerAction): action is ReducerAction<"setGeneralProp"> =>
@@ -162,7 +168,8 @@ export const isAddSubchartAction = (action: ReducerAction): action is ReducerAct
   action.task === "addSubchart";
 export const isAddGraphAction = (action: ReducerAction): action is ReducerAction<"addGraph"> =>
   action.task === "addGraph";
-export const isDrawAction = (action: ReducerAction): action is ReducerAction<"draw"> => action.task === "draw";
+export const isStartDrawingAction = (action: ReducerAction): action is ReducerAction<"startDrawing"> =>
+  action.task === "startDrawing";
 export const isRemoveSubchartAction = (action: ReducerAction): action is ReducerAction<"removeSubchart"> =>
   action.task === "removeSubchart";
 export const isRemoveGraphAction = (action: ReducerAction): action is ReducerAction<"removeGraph"> =>
@@ -175,12 +182,17 @@ export const isClearChartAction = (action: ReducerAction): action is ReducerActi
   action.task === "clearChart";
 export const isSwapSubchartsAction = (action: ReducerAction): action is ReducerAction<"swapSubcharts"> =>
   action.task === "swapSubcharts";
-export const isAddDataAction = (action: ReducerAction): action is ReducerAction<"addData"> => action.task === "addData";
+export const isInitDataAction = (action: ReducerAction): action is ReducerAction<"initData"> =>
+  action.task === "initData";
 export const isModifyChartDataAction = (action: ReducerAction): action is ReducerAction<"modifyChartData"> =>
   action.task === "modifyChartData";
 export const isModifyIndicatorDataAction = (action: ReducerAction): action is ReducerAction<"modifyIndicatorData"> =>
   action.task === "modifyIndicatorData";
-// export const isToggleDarkModeAction = (action: ReducerAction): action is ReducerAction<"toggleDarkMode"> =>
-//   action.task === "toggleDarkMode";
 export const isSetThemeAction = (action: ReducerAction): action is ReducerAction<"setTheme"> =>
   action.task === "setTheme";
+export const isSetPointerEvents = (action: ReducerAction): action is ReducerAction<"setPointerEventsIntern"> =>
+  action.task === "setPointerEventsIntern";
+export const isAddSnackbarMessageAction = (action: ReducerAction): action is ReducerAction<"addSnackbarMessage"> =>
+  action.task === "addSnackbarMessage";
+export const isRemoveSnackbarMessageAction = (action: ReducerAction): action is ReducerAction<"addSnackbarMessage"> =>
+  action.task === "removeSnackbarMessage";

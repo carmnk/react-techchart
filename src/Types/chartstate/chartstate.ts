@@ -1,14 +1,12 @@
-import { ReducerTask, ReducerAction } from "./ChartStateReducer";
-import { CalcSubchartState, CalcPointerState, CalcXaxisState } from "./ChartStateCalc";
-import { ChartData, IndicatorData } from "./ChartStateData";
-import { SubchartState } from "./ChartStateSubchart";
-import { PointerState, ContainerSizeState } from "./ChartInteractions";
-import { ChartStateProps, RealtimeDataTick } from "./ChartProps";
-
-/** ChartState */
+import type { AlertProps } from "@mui/material/Alert";
+import { CalcState } from "./calc";
+import { ChartData, IndicatorData } from "./data";
+import { SubchartState } from "./subcharts";
+import { PointerState, ContainerSizeState } from "./useChartInteractions";
 
 export type ChartState = {
-  options: {
+  theme: {
+    name: string;
     isDarkMode: boolean;
     backgroundColor: string;
     borderColor: string;
@@ -37,6 +35,7 @@ export type ChartState = {
       fontName: string;
     };
     xaxis: {
+      initialWidthPerTick: number;
       heightXAxis: number;
       heightTickMarkLines: number;
       fillColor: string;
@@ -50,33 +49,31 @@ export type ChartState = {
       anchorColor: string;
     };
   };
-  calc: {
-    subcharts: CalcSubchartState[];
-    xaxis: CalcXaxisState;
-    pointer: CalcPointerState;
-    yToPix?: (y: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;
-    pixToY?: (pixY: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;
-  };
-  // darkMode: boolean;
   fullscreen: boolean;
-  subCharts: SubchartState[];
   draw: {
     isDrawing: boolean;
     xy: [number, number][];
     type?: "hline" | "vline" | "trendline";
     params: { name: string; val: any; vals: any[] }[];
   };
+  subcharts: SubchartState[];
   data: (ChartData | IndicatorData)[];
   pointer: PointerState;
   containerSize: ContainerSizeState;
+  calc: CalcState;
+  menu: {
+    location: null;
+    expandedSetting: [];
+    disablePointerEvents: boolean;
+    snackbars: { text: string; type: AlertProps["severity"] }[];
+  };
 };
 
-/** Hook */
-export type ChartStateDispatch<Action extends ReducerTask> = React.Dispatch<ReducerAction<Action>>;
-export type ChartStateHook<Action extends ReducerTask = ReducerTask> = {
-  ChartState: ChartState;
-  Dispatch: ChartStateDispatch<ReducerTask>;
-  ContainerRef: React.RefObject<HTMLDivElement>;
-  settings: ChartStateProps["settings"];
-  rtTicks: RealtimeDataTick[];
+export type ChartMemo = {
+  customEffectChartState: CustomEffectChartState | null;
+};
+
+export type CustomEffectChartState = {
+  subcharts: Omit<SubchartState, "top" | "bottom">[];
+  draw: Omit<ChartState["draw"], "xy"> & { nPixXy: number };
 };

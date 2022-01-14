@@ -1,15 +1,21 @@
-import { ToolModel } from "./ToolModel";
+import { ToolModel } from "../ToolModel";
 
-/** ChartState Subcharts Types */
-export type GenericGraphState = {
-  dataId: string;
-  //dataIdx?: number;
-  // name: string;
+export type SubchartState = {
+  yaxis: YaxisState[];
+  top: number;
+  bottom: number;
 };
 
-export type ChartGraphStateSpecifics = {
+export type YaxisState = {
+  graphs: GraphState[];
+  tools: ToolState[];
+};
+
+export type GraphState = ChartGraphState | IndicatorGraphState;
+
+export type ChartGraphState = GenericGraphState & {
   type: "chart";
-  chartType: "line" | "candles" | "area";
+  chartType: "line" | "candles"; // | "area";
   style: {
     candleWickStrokeColor: string;
     candleStrokeColor: string;
@@ -18,17 +24,16 @@ export type ChartGraphStateSpecifics = {
     strokeColor: string;
   };
 };
-
-export type IndicatorGraphStateSpecifics = {
+export type IndicatorGraphState = GenericGraphState & {
   type: "indicator";
   style: {
     strokeColor: string[];
   };
 };
 
-export type GraphState = ChartGraphState | IndicatorGraphState;
-export type ChartGraphState = GenericGraphState & ChartGraphStateSpecifics;
-export type IndicatorGraphState = GenericGraphState & IndicatorGraphStateSpecifics;
+type GenericGraphState = {
+  dataId: string;
+};
 
 export const isIndicatorGraph = (graph: GraphState): graph is IndicatorGraphState => {
   if (graph.type === "indicator") return true;
@@ -47,15 +52,4 @@ export type ToolState = {
     anchorColor: string;
   };
   params?: ToolModel["params"];
-};
-
-export type YaxisState = {
-  graphs: GraphState[];
-  tools: ToolState[];
-};
-
-export type SubchartState = {
-  yaxis: YaxisState[];
-  top: number;
-  bottom: number;
 };

@@ -1,36 +1,28 @@
 import React from "react";
 import IconButton from "@mui/material/IconButton";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import TextField from "@mui/material/TextField";
 import useTheme from "@mui/material/styles/useTheme";
-
-import {
-  mdiBorderColor,
-  mdiBullseye,
-  mdiHelp,
-  mdiMinus,
-  mdiClose,
-  mdiArrowSplitHorizontal,
-  mdiIframeVariableOutline,
-} from "@mdi/js";
+import { mdiBorderColor, mdiBullseye, mdiHelp, mdiMinus } from "@mdi/js";
+import { mdiClose, mdiArrowSplitHorizontal, mdiApplicationVariableOutline } from "@mdi/js";
 import Icon from "@mdi/react";
 import { CIcon } from "../../Components/CIcon";
 import { CMColorPropTreeItem } from "./CMColorPropTreeItem";
 import { CTreeItem } from "../../Components/CTreeItem";
 import * as T from "../../Types";
 import { defaultTools } from "../../Tools/DefaultTools";
+import { CMNumberPropTreeItem } from "./CMNumberPropTreeItem";
+import { CMSelectPropTreeItem } from "./CMSelectPropTreeItem";
 
 export const ChartMenuToolTreeItem = (props: {
   subchartIdx: number;
   yaxisIdx: number;
   toolIdx: number;
-  subCharts: T.ChartState["subCharts"];
-  Dispatch: T.ChartStateHook["Dispatch"];
+  subcharts: T.ChartState["subcharts"];
+  Dispatch: T.ChartController["Dispatch"];
   handleToggleExpanded?: (id: string) => void;
+  fullscreen: boolean;
 }) => {
-  const { subchartIdx, yaxisIdx, toolIdx, subCharts, Dispatch, handleToggleExpanded } = props;
-  const toolIn = subCharts?.[subchartIdx]?.yaxis?.[yaxisIdx]?.tools?.[toolIdx];
+  const { subchartIdx, yaxisIdx, toolIdx, subcharts, Dispatch, handleToggleExpanded, fullscreen } = props;
+  const toolIn = subcharts?.[subchartIdx]?.yaxis?.[yaxisIdx]?.tools?.[toolIdx];
   const tool = toolIn ? toolIn : null;
   const theme = useTheme();
   if (!tool) return null;
@@ -43,13 +35,7 @@ export const ChartMenuToolTreeItem = (props: {
       onColorSelected: (color: string) => {
         Dispatch({
           task: "setToolProp",
-          params: {
-            prop: "strokeColor",
-            subchartIdx,
-            yaxisIdx: 0,
-            toolIdx,
-            newValue: color,
-          },
+          params: { prop: "strokeColor", subchartIdx, yaxisIdx: 0, toolIdx, newValue: color },
         });
       },
     },
@@ -60,13 +46,7 @@ export const ChartMenuToolTreeItem = (props: {
       onColorSelected: (color: string) => {
         Dispatch({
           task: "setToolProp",
-          params: {
-            prop: "anchorColor",
-            subchartIdx,
-            yaxisIdx: 0,
-            toolIdx,
-            newValue: color,
-          },
+          params: { prop: "anchorColor", subchartIdx, yaxisIdx: 0, toolIdx, newValue: color },
         });
       },
     },
@@ -123,11 +103,11 @@ export const ChartMenuToolTreeItem = (props: {
       }
     >
       {tool.type === "hline" ? (
-        <CTreeItem
+        <CMNumberPropTreeItem
           key={`tool-${subchartIdx}-y0-${toolIdx}-hlinelevel`}
           nodeId={`tool-${subchartIdx}-y0-${toolIdx}-hlinelevel`}
           labelText={"Y-Level"}
-          typographyVariant="body1"
+          value={tool.xy[0][1]}
           labelIcon={
             <CIcon
               path={mdiArrowSplitHorizontal}
@@ -135,105 +115,51 @@ export const ChartMenuToolTreeItem = (props: {
               color={theme.palette.mode === "light" ? "#333" : "#fff"}
             />
           }
-          labelInfo={
-            <TextField
-              variant="outlined"
-              margin="none"
-              size="small"
-              inputProps={{ style: { padding: 5, width: 50 } }}
-              defaultValue={tool.xy[0][1]}
-              onChange={(e: any) => {
-                const val = parseFloat(e.target.value);
-                if (isNaN(val)) return;
+          onChangeConfirmed={(val) => {
+            Dispatch({
+              task: "setToolProp",
+              params: { prop: "hLineYlevel", subchartIdx, yaxisIdx: 0, toolIdx, newValue: val },
+            });
+          }}
+        />
+      ) : null}
+      {tool.params &&
+        tool.params.map((param, paramIdx) => {
+          const toolParamDefaults = defaultTools.find((defTool) => defTool.type === tool.type)?.default?.params;
+          const icon = toolParamDefaults ? toolParamDefaults[paramIdx].icon : mdiApplicationVariableOutline;
+          return param.type === "number" ? (
+            <CMNumberPropTreeItem
+              key={`tool-s${subchartIdx}-y0-t${toolIdx}-p${paramIdx}`}
+              nodeId={`tool-s${subchartIdx}-y0-t${toolIdx}-p${paramIdx}`}
+              labelText={param.name}
+              labelIcon={<CIcon path={icon} size={"24px"} color={theme.palette.mode === "light" ? "#333" : "#fff"} />}
+              value={param.val}
+              onChangeConfirmed={(newValue) => {
                 Dispatch({
                   task: "setToolProp",
-                  params: {
-                    prop: "hLineYlevel",
-                    subchartIdx,
-                    yaxisIdx: 0,
-                    toolIdx,
-                    newValue: val,
-                  },
+                  params: { prop: "toolParam", subchartIdx, yaxisIdx, toolIdx, toolParamIdx: paramIdx, newValue },
                 });
               }}
             />
-          }
-        />
-      ) : null}
-      {tool.params
-        ? tool.params.map((param: any, paramIdx: number) => {
-            const toolParamDefaults = defaultTools.find((defTool) => defTool.type === tool.type)?.default?.params;
-            const icon = toolParamDefaults ? toolParamDefaults[paramIdx].icon : mdiIframeVariableOutline;
-            return (
-              <CTreeItem
-                key={`tool-s${subchartIdx}-y0-t${toolIdx}-p${paramIdx}`}
-                nodeId={`tool-s${subchartIdx}-y0-t${toolIdx}-p${paramIdx}`}
-                labelText={param.name}
-                typographyVariant="body1"
-                labelIcon={<CIcon path={icon} size={"24px"} color={theme.palette.mode === "light" ? "#333" : "#fff"} />}
-                labelInfo={
-                  param.type === "select" ? (
-                    <Select
-                      size="small"
-                      margin="none"
-                      SelectDisplayProps={{
-                        style: { paddingTop: 2, paddingBottom: 2 },
-                      }}
-                      // inputProps={{ style: { padding: 0, minWidth: 50 } }}
-                      value={param.val}
-                      onChange={(e: any) => {
-                        const newValue = e.target.value;
-                        Dispatch({
-                          task: "setToolProp",
-                          params: {
-                            prop: "toolParam",
-                            subchartIdx,
-                            yaxisIdx,
-                            toolIdx,
-                            toolParamIdx: paramIdx,
-                            newValue,
-                          },
-                        });
-                      }}
-                    >
-                      {param.vals.map((optionVal: any, optValIdx: number) => (
-                        <MenuItem
-                          key={`tool-s${subchartIdx}-y0-t${toolIdx}-p${paramIdx}-o${optValIdx}`}
-                          value={optionVal}
-                        >
-                          {optionVal}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  ) : param.type === "number" ? (
-                    <TextField
-                      variant="outlined"
-                      margin="none"
-                      size="small"
-                      inputProps={{ style: { padding: 5, maxWidth: 80 } }}
-                      value={param.val}
-                      onChange={(e: any) => {
-                        const newValue = parseFloat(e.target.value);
-                        if (isNaN(newValue)) return;
-                        Dispatch({
-                          task: "setToolProp",
-                          params: {
-                            prop: "toolParam",
-                            subchartIdx,
-                            yaxisIdx,
-                            toolIdx,
-                            toolParamIdx: paramIdx,
-                            newValue,
-                          },
-                        });
-                      }}
-                    />
-                  ) : undefined
-                }
-              />
-            );
-          })
-        : null}
+          ) : param.type === "select" ? (
+            <CMSelectPropTreeItem
+              key={`tool-s${subchartIdx}-y0-t${toolIdx}-p${paramIdx}`}
+              nodeId={`tool-s${subchartIdx}-y0-t${toolIdx}-p${paramIdx}`}
+              labelText={param.name}
+              labelIcon={<CIcon path={icon} size={"24px"} color={theme.palette.mode === "light" ? "#333" : "#fff"} />}
+              value={param.val}
+              fullscreen={fullscreen}
+              options={param.vals}
+              onChangeConfirmed={(newValue) => {
+                Dispatch({
+                  task: "setToolProp",
+                  params: { prop: "toolParam", subchartIdx, yaxisIdx, toolIdx, toolParamIdx: paramIdx, newValue },
+                });
+              }}
+            />
+          ) : null;
+        })}
+
       {toolColorProps(tool).map((toolColorProps, tcIdx) => (
         <CMColorPropTreeItem
           nodeId={`settings-treeitem-tool-clrProp-${subchartIdx}-y${yaxisIdx}-t${toolIdx}-p${tcIdx}`}
@@ -241,6 +167,7 @@ export const ChartMenuToolTreeItem = (props: {
           color={toolColorProps.color}
           iconPath={toolColorProps.icon}
           text={toolColorProps.text}
+          fullscreen={fullscreen}
           onColorSelected={toolColorProps.onColorSelected}
         />
       ))}

@@ -1,10 +1,40 @@
 import uniq from "lodash/uniq";
 import * as T from "../Types";
+import { DeepPartial } from "../Types/utils/utils";
 import { setStateProp } from "../utils";
 import { isNullish } from "../utils/Basics";
 
 export const prefersDarkMode =
   typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)").matches : false;
+
+export const graphColorsLight: string[] = ["#666", "#0693E3", "#f50057", "#00D084", "#FF6900", "#bd10e0", "#bbb"];
+export const graphColorsDark: string[] = ["#bbb", "#0693E3", "#f50057", "#00D084", "#FF6900", "#bd10e0", "#bbb"];
+export const getGraphColors = (colorArr: string[], idx: number) => colorArr[idx % colorArr.length];
+export const defaultCandleChartStyle = {
+  candleStrokeColor: "transparent",
+  candleWickStrokeColor: "#666",
+  candleDownColor: "#c70039",
+  candleUpColor: "#009688",
+};
+export const defaultLineChartStyle = { strokeColor: ["#666"] };
+export const defaultDarkLineChartStyle = { strokeColor: ["#bbb"] };
+export const getDefaultGraphStyle = (
+  type: T.GraphState["type"],
+  darkMode?: boolean,
+  graphIdx?: number,
+  indicatorLines?: number
+): T.GraphState["style"] => {
+  if (type === "indicator") {
+    return !indicatorLines || indicatorLines <= 1
+      ? { strokeColor: [getGraphColors(darkMode ? graphColorsDark : graphColorsLight, graphIdx ?? 0)] }
+      : { strokeColor: (darkMode ? graphColorsDark : graphColorsLight).slice(0, indicatorLines) };
+  } else {
+    return {
+      ...defaultCandleChartStyle,
+      strokeColor: getGraphColors(darkMode ? graphColorsDark : graphColorsLight, graphIdx ?? 0),
+    };
+  }
+};
 
 export const defaultContainerSizeState: T.ChartState["containerSize"] = {
   top: 0,
@@ -13,19 +43,12 @@ export const defaultContainerSizeState: T.ChartState["containerSize"] = {
   height: 300,
   init: false,
 };
-
 export const defaultPointerState: T.ChartState["pointer"] = {
   isHovering: false,
   move: { isMoving: false, xy: [0, 0] },
   wheel: { isWheeling: false, delta: [0, 0] },
-  dragPointerUp: {
-    isDragPointerUp: false,
-    xy: [0, 0],
-    // first: false,
-    // last: false,
-    // initial: [0, 0],
-    // movementInitial: [0, 0],
-  },
+  dragPointerUp: { isDragPointerUp: false, xy: [0, 0] },
+  pinch: { isPinching: false, first: false, movementInitial: [0, 0], origin: [0, 0] },
   drag: {
     isDragging: false,
     xy: [0, 0],
@@ -36,18 +59,15 @@ export const defaultPointerState: T.ChartState["pointer"] = {
     delta: [0, 0],
     ctrlKey: false,
   },
-  pinch: { isPinching: false, first: false, movementInitial: [0, 0], origin: [0, 0] },
 };
-
 export const defaultDrawState: T.ChartState["draw"] = {
   isDrawing: false,
   xy: [],
   params: [],
 };
-
 export const defaultCalcXaxis: T.ChartState["calc"]["xaxis"] = {
   totalTranslatedX: 0,
-  scaledWidthPerTick: 10,
+  scaledWidthPerTick: 7,
   xStart: 0,
   xEnd: 0,
   xLast: 0,
@@ -55,7 +75,7 @@ export const defaultCalcXaxis: T.ChartState["calc"]["xaxis"] = {
   pixXStart: 0,
   pixXEnd: 0,
   optChartPeriod: null,
-  initialWidthPerTick: 10,
+  initialWidthPerTick: 7,
   curTicks: [],
 };
 
@@ -74,7 +94,8 @@ export const defaultCalcPointer: T.ChartState["calc"]["pointer"] = {
   },
   click: { clickedSubchartIdx: null },
 };
-export const defaultLightTheme = {
+export const defaultLightTheme: T.ChartState["theme"] = {
+  name: "default light",
   isDarkMode: false,
   borderColor: "#000",
   backgroundColor: "#fff",
@@ -115,6 +136,7 @@ export const defaultLightTheme = {
     fontColor: "#000",
     fontSize: 14,
     fontName: "Arial",
+    initialWidthPerTick: 7,
   },
   draw: {
     strokeColor: "red",
@@ -124,6 +146,7 @@ export const defaultLightTheme = {
 
 export const defaultDarkTheme = {
   ...defaultLightTheme,
+  name: "default dark",
   isDarkMode: true,
   crosshair: { ...defaultLightTheme.crosshair, strokeColor: "#bbb" },
   borderColor: "#666",
@@ -135,101 +158,88 @@ export const defaultDarkTheme = {
 
 export const defaultState: T.ChartState = {
   data: [],
-  subCharts: [],
-  // darkMode: false,
+  subcharts: [],
   fullscreen: false,
   draw: defaultDrawState,
   containerSize: defaultContainerSizeState,
   pointer: defaultPointerState,
-  calc: {
-    subcharts: [],
-    xaxis: defaultCalcXaxis,
-    pointer: defaultCalcPointer,
-  },
-  options: defaultLightTheme,
+  calc: { subcharts: [], xaxis: defaultCalcXaxis, pointer: defaultCalcPointer },
+  theme: defaultLightTheme,
+  menu: { location: null, expandedSetting: [], disablePointerEvents: false, snackbars: [] },
 };
 
 export const defaultDarkState: T.ChartState = {
   ...defaultState,
-  options: defaultDarkTheme,
+  theme: defaultDarkTheme,
 };
-export const getInitSubchartsState = (
-  isDarkMode: boolean,
-  inputData?: T.ChartStateProps["data"]
-): T.ChartState["subCharts"] => {
+
+export const getInitSubchartsState = (isDarkMode: boolean, inputData?: T.InputData[]): T.ChartState["subcharts"] => {
+  if (!inputData) return [];
   let sIdx = -1;
   let gIdx = 0;
-  const graphs: (T.ChartGraphState & { subchartIdx: number; yaxisIdx: number; graphIdx: number })[] = !inputData
-    ? []
-    : (
-        inputData
-          .map((inputDat, inputDatIdx) => {
-            if (
-              sIdx === -1 ||
-              (isNullish(inputDat?.graphProps?.subchartIdx) &&
-                (inputDat.type === "chart" ||
-                  (inputDat.type === "indicator" && inputDat.indicator.default.newSubchart)))
-            ) {
-              sIdx++;
-              gIdx = 0;
-            } else {
-              gIdx++;
-            }
-            // const yIdx = 0;
-
-            if (inputDat.type === "chart") {
-              const chartType =
-                ["line", "candles", "area"].find((val) => val === inputDat?.graphProps?.chartType) ?? "candles";
-
-              return {
-                dataId: inputDat.id, // inputDat.id, check initLoadData
-                dataIdx: inputDatIdx,
-                type: "chart",
-                chartType,
-                style: {
-                  ...defaultCandleChartStyle,
-                  strokeColor: isDarkMode
-                    ? defaultDarkLineChartStyle.strokeColor[0]
-                    : defaultLineChartStyle.strokeColor[0],
-                  ...inputDat?.graphProps?.style,
-                },
-                subchartIdx: inputDat?.graphProps?.subchartIdx ?? sIdx,
-                yaxisIdx: 0,
-                graphIdx: inputDat?.graphProps?.graphIdx ?? gIdx,
-              };
-            } else if (inputDat.type === "indicator") {
-              return {
-                dataId: inputDat.id ?? "", //indSrcDataIdx,
-                dataIdx: inputDatIdx,
-                type: "indicator",
-                style: {
-                  strokeColor: inputDat?.graphProps?.style?.strokeColor
-                    ? inputDat.graphProps.style.strokeColor
-                    : inputDat.indicator.graphTypes.length <= 1
-                    ? defaultLineChartStyle.strokeColor
-                    : isDarkMode
-                    ? graphColorsDark.slice(0, inputDat.indicator.graphTypes.length)
-                    : graphColorsLight.slice(0, inputDat.indicator.graphTypes.length),
-                },
-                subchartIdx: inputDat?.graphProps?.subchartIdx ?? sIdx,
-                yaxisIdx: 0,
-                graphIdx: inputDat?.graphProps?.graphIdx ?? gIdx,
-              };
-            } else return null;
-          })
-          .filter((val) => !!val) as (T.ChartGraphState & { subchartIdx: number; yaxisIdx: number; graphIdx: number })[]
-      ).sort((a, b) =>
-        a && b && a.subchartIdx !== b.subchartIdx
-          ? a.subchartIdx - b.subchartIdx
-          : a && b && a.subchartIdx === b.subchartIdx
-          ? a.graphIdx - b.graphIdx
-          : 0
-      );
+  const graphs: (T.ChartGraphState & { subchartIdx: number; yaxisIdx: number; graphIdx: number })[] = (
+    inputData
+      .map((inputDat, inputDatIdx) => {
+        if (
+          sIdx === -1 ||
+          (isNullish((inputDat?.graphProps as any)?.subchartIdx) &&
+            (inputDat.type === "chart" || (inputDat.type === "indicator" && inputDat.indicator.default.newSubchart)))
+        ) {
+          sIdx++;
+          gIdx = 0;
+        } else {
+          gIdx++;
+        }
+        if (inputDat.type === "chart") {
+          const chartType =
+            ["line", "candles", "area"].find((val) => val === inputDat?.graphProps?.chartType) ?? "candles";
+          return {
+            dataId: inputDat.id,
+            dataIdx: inputDatIdx,
+            type: "chart",
+            chartType,
+            style: {
+              ...defaultCandleChartStyle,
+              strokeColor: isDarkMode ? defaultDarkLineChartStyle.strokeColor[0] : defaultLineChartStyle.strokeColor[0],
+              ...inputDat?.graphProps?.style,
+            },
+            subchartIdx: (inputDat?.graphProps as any)?.subchartIdx ?? sIdx,
+            yaxisIdx: 0,
+            graphIdx: (inputDat?.graphProps as any)?.graphIdx ?? gIdx,
+          };
+        } else if (inputDat.type === "indicator") {
+          return {
+            dataId: inputDat.id ?? "",
+            dataIdx: inputDatIdx,
+            type: "indicator",
+            style: {
+              strokeColor: inputDat?.graphProps?.style?.strokeColor
+                ? inputDat.graphProps.style.strokeColor
+                : inputDat.indicator.graphTypes.length <= 1
+                ? defaultLineChartStyle.strokeColor
+                : isDarkMode
+                ? graphColorsDark.slice(0, inputDat.indicator.graphTypes.length)
+                : graphColorsLight.slice(0, inputDat.indicator.graphTypes.length),
+            },
+            subchartIdx: inputDat?.graphProps?.subchartIdx ?? sIdx,
+            yaxisIdx: 0,
+            graphIdx: inputDat?.graphProps?.graphIdx ?? gIdx,
+          };
+        } else return null;
+      })
+      .filter((val) => !!val) as (T.ChartGraphState & { subchartIdx: number; yaxisIdx: number; graphIdx: number })[]
+  ).sort((a, b) =>
+    a && b && a.subchartIdx !== b.subchartIdx
+      ? a.subchartIdx - b.subchartIdx
+      : a && b && a.subchartIdx === b.subchartIdx
+      ? a.graphIdx - b.graphIdx
+      : 0
+  );
   const amtSubcharts = uniq(graphs?.map((graph) => graph.subchartIdx));
   const subcharts2 = amtSubcharts.map((s, sIdx) => ({
     top: 0, // calculated with containerResize
     bottom: 0, // calculated with containerResize
-    yaxis: [0].map((y, yIdx) => ({
+    yaxis: [0].map(() => ({
       tools: [],
       graphs: graphs
         ?.filter((val) => val.subchartIdx === sIdx)
@@ -243,10 +253,11 @@ export const getInitSubchartsState = (
 };
 
 export const getInitState = (
-  initialState?: T.ChartStateProps["settings"]["initialState"],
-  initWidthPerTick?: number
+  initialTheme?: DeepPartial<T.ChartState["theme"]>
+  // initWidthPerTick?: number
 ): T.ChartState => {
-  const isDarkMode = (prefersDarkMode && initialState?.isDarkMode === undefined) || !!initialState?.isDarkMode;
+  const initWidthPerTick = initialTheme?.xaxis?.initialWidthPerTick;
+  const isDarkMode = (prefersDarkMode && initialTheme?.isDarkMode === undefined) || !!initialTheme?.isDarkMode;
   const defaultStateInt: T.ChartState = isDarkMode ? defaultDarkState : defaultState;
   const defaultStateProc: T.ChartState = !initWidthPerTick
     ? defaultStateInt
@@ -258,15 +269,15 @@ export const getInitState = (
 
   const initState: T.ChartState = {
     ...defaultStateProc,
-    subCharts: [],
-    options: {
-      ...initialState,
-      ...defaultStateProc.options,
-      grid: { ...defaultStateProc.options.grid, ...initialState?.grid },
-      yaxis: { ...defaultStateProc.options.yaxis, ...initialState?.yaxis },
-      xaxis: { ...defaultStateProc.options.xaxis, ...initialState?.xaxis },
-      crosshair: { ...defaultStateProc.options.crosshair, ...initialState?.crosshair },
-      draw: { ...defaultStateProc.options.draw, ...initialState?.draw },
+    subcharts: [],
+    theme: {
+      ...initialTheme,
+      ...defaultStateProc.theme,
+      grid: { ...defaultStateProc.theme.grid, ...initialTheme?.grid },
+      yaxis: { ...defaultStateProc.theme.yaxis, ...initialTheme?.yaxis },
+      xaxis: { ...defaultStateProc.theme.xaxis, ...initialTheme?.xaxis },
+      crosshair: { ...defaultStateProc.theme.crosshair, ...initialTheme?.crosshair },
+      draw: { ...defaultStateProc.theme.draw, ...initialTheme?.draw },
     },
   };
   return initState;
@@ -274,52 +285,10 @@ export const getInitState = (
 
 export const getDefaultChartInteractions = (initialChartState: T.ChartState): T.ChartInteractions => {
   return {
-    calc: { subcharts: [], pointer: initialChartState.calc.pointer, xaxis: initialChartState.calc.xaxis },
     containerSize: initialChartState.containerSize,
     pointer: initialChartState.pointer,
     stateControl: {
-      prevAction: null,
-      lastMainChartData: [],
-      // lastUpdate: new Date(),
       shallUpdate: [],
-      customEffectChartState: null,
     },
   };
-};
-
-export const graphColorsLight: string[] = ["#666", "#0693E3", "#f50057", "#00D084", "#FF6900", "#bd10e0", "#bbb"];
-export const graphColorsDark: string[] = ["#bbb", "#0693E3", "#f50057", "#00D084", "#FF6900", "#bd10e0", "#bbb"];
-export const getGraphColors = (colorArr: string[], idx: number) => colorArr[idx % colorArr.length];
-
-export const defaultCandleChartStyle = {
-  candleStrokeColor: "transparent",
-  candleWickStrokeColor: "#666",
-  candleDownColor: "#c70039",
-  candleUpColor: "#009688",
-};
-
-export const defaultLineChartStyle = {
-  strokeColor: ["#666"],
-};
-
-export const defaultDarkLineChartStyle = {
-  strokeColor: ["#bbb"],
-};
-
-export const getDefaultGraphStyle = (
-  type: T.GraphState["type"],
-  darkMode?: boolean,
-  graphIdx?: number,
-  indicatorLines?: number
-): T.GraphState["style"] => {
-  if (type === "indicator") {
-    return !indicatorLines || indicatorLines <= 1
-      ? { strokeColor: [getGraphColors(darkMode ? graphColorsDark : graphColorsLight, graphIdx ?? 0)] }
-      : { strokeColor: (darkMode ? graphColorsDark : graphColorsLight).slice(0, indicatorLines) };
-  } else {
-    return {
-      ...defaultCandleChartStyle,
-      strokeColor: getGraphColors(darkMode ? graphColorsDark : graphColorsLight, graphIdx ?? 0),
-    };
-  }
 };

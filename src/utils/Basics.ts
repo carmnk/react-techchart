@@ -1,4 +1,6 @@
 /** Null/Undefined  */
+// is null/undefined or NaN
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isNullish = (val: any): val is undefined | null => {
   if (val === undefined || val === null) return true;
   if (typeof val === "number") if (isNaN(val)) return true;
@@ -12,6 +14,7 @@ export const getDecimals = (val: number): number => {
 };
 
 // Object / Array utils
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const includesOne = (array: any[], ...params: any[]): boolean => {
   let res = false;
   params.forEach((param) => {

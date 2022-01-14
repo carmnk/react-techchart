@@ -1,6 +1,7 @@
 import { isNullish } from "../../utils/Basics";
 import * as T from "../../Types";
 import { getDefaultGraphStyle } from "../Defaults";
+import { removeStateProp, setStateProp } from "../../utils";
 
 export const createSubChartModel = (params: {
   top: T.SubchartState["top"];
@@ -27,9 +28,9 @@ export const createYaxisModel = (params: {
   indicator?: T.IndicatorModel;
 }): T.YaxisState | null => {
   const { dataId, style, indicator, type } = params;
-  if (type === "indicator" && !indicator /*|| !indSrcId*/) return null;
+  if (type === "indicator" && !indicator) return null;
   const graph =
-    type === "indicator" && !!indicator //&& !!indSrcId
+    type === "indicator" && !!indicator
       ? createIndicatorGraphModel({
           dataId,
           style: style as T.IndicatorGraphState["style"],
@@ -60,7 +61,6 @@ export const createIndicatorGraphModel = (params: {
 }): T.IndicatorGraphState => {
   const { dataId, style } = params;
   return {
-    // name: indicator.name,
     type: "indicator" as const,
     dataId,
     style,
@@ -75,41 +75,41 @@ export const swapSubcharts = (
   const lowerIdx = subchartIdx1 <= subchartIdx2 ? subchartIdx1 : subchartIdx2;
   const higherIdx = subchartIdx1 > subchartIdx2 ? subchartIdx1 : subchartIdx2;
 
-  const subchart1 = current.subCharts[lowerIdx];
-  const subchart2 = current.subCharts[higherIdx];
+  const subchart1 = current.subcharts[lowerIdx];
+  const subchart2 = current.subcharts[higherIdx];
   const height1 = subchart1.bottom - subchart1.top;
   const height2 = subchart2.bottom - subchart2.top;
   const dHeight21 = height2 - height1;
-  return lowerIdx === higherIdx || isNullish(lowerIdx) || isNullish(higherIdx) || higherIdx >= current.subCharts.length
+  return lowerIdx === higherIdx || isNullish(lowerIdx) || isNullish(higherIdx) || higherIdx >= current.subcharts.length
     ? current
     : {
         ...current,
-        subCharts: [
-          ...current.subCharts.slice(0, lowerIdx),
+        subcharts: [
+          ...current.subcharts.slice(0, lowerIdx),
           { ...subchart2, bottom: subchart1.top + height2, top: subchart1.top },
-          ...current.subCharts
+          ...current.subcharts
             .slice(lowerIdx + 1, higherIdx)
-            .map((sub, sIdx) => ({ ...sub, top: sub.top + dHeight21, bottom: sub.bottom + dHeight21 })),
+            .map((sub) => ({ ...sub, top: sub.top + dHeight21, bottom: sub.bottom + dHeight21 })),
           { ...subchart1, top: subchart2.top + dHeight21, bottom: subchart2.bottom },
-          ...current.subCharts.slice(higherIdx + 1),
+          ...current.subcharts.slice(higherIdx + 1),
         ],
       };
 };
 
 export const resizeSubcharts = (params: {
   subchartsHeight: number;
-  subCharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   addSubchart?: { data: T.Data; darkMode: boolean };
   removeSubchartIdx?: number;
 }) => {
-  const { subCharts, removeSubchartIdx, addSubchart, subchartsHeight } = params;
+  const { subcharts, removeSubchartIdx, addSubchart, subchartsHeight } = params;
   const defaultMainHeight = 250;
   const defaultSubHeight = 150;
 
   const newData = addSubchart?.data;
   const subchartsDeleted = isNullish(removeSubchartIdx)
-    ? subCharts
-    : [...subCharts.slice(0, removeSubchartIdx), ...subCharts.slice(removeSubchartIdx + 1)];
+    ? subcharts
+    : [...subcharts.slice(0, removeSubchartIdx), ...subcharts.slice(removeSubchartIdx + 1)];
 
   const amtNewSubcharts = subchartsDeleted.length + (addSubchart ? 1 : 0);
   const initFullfillFactor = subchartsHeight / (defaultMainHeight + (amtNewSubcharts - 1) * defaultSubHeight);
@@ -124,8 +124,14 @@ export const resizeSubcharts = (params: {
       ? subchartsHeight - (amtNewSubcharts - 1) * Math.floor(defaultSubHeight * initFullfillFactor)
       : Math.floor(defaultSubHeight * initFullfillFactor)
   );
-
-  const curComplSubchartHeights = addSubchart ? [...currentSubchartHeights, defaultSubHeight] : currentSubchartHeights;
+  const prevFullfillment = Math.min(
+    (subchartsHeight - (subcharts?.[0] ? subcharts?.[0]?.bottom - subcharts?.[0]?.top : 0)) /
+      ((subcharts.length - 1) * defaultSubHeight),
+    1
+  );
+  const curComplSubchartHeights = addSubchart
+    ? [...currentSubchartHeights, prevFullfillment * defaultSubHeight]
+    : currentSubchartHeights;
   const curSecondarySubHeight = curComplSubchartHeights.slice(1).reduce((acc, cur) => acc + cur, 0);
   const optHeight = defaultMainHeight + curSecondarySubHeight;
 
@@ -139,7 +145,7 @@ export const resizeSubcharts = (params: {
       refillableHeight === 0 ? 0 : distributable >= refillableHeight ? 1 : distributable / refillableHeight;
     const refilledHeights = curComplSubchartHeights.map((h, hIdx) => h + Math.floor(fulfillFactor * refillables[hIdx]));
     const sumRefilledSecondaryHeights = refilledHeights.slice(1).reduce((acc, cur) => acc + cur, 0);
-    const resizedSubcharts = subchartsDeleted.reduce<T.ChartState["subCharts"]>(
+    const resizedSubcharts = subchartsDeleted.reduce<T.ChartState["subcharts"]>(
       (acc, cur, idx) =>
         idx === 0
           ? [{ ...cur, top: 0, bottom: subchartsHeight - sumRefilledSecondaryHeights }]
@@ -174,8 +180,8 @@ export const resizeSubcharts = (params: {
     const shrinkedSecondarySubHeights = curComplSubchartHeights
       .slice(1)
       .map((height) => Math.min(Math.floor(height * shrink), 150));
-    const sumShrinkedSecSubHeights = shrinkedSecondarySubHeights.reduce((acc, cur) => acc + cur);
-    const resizedSubcharts = subchartsDeleted.reduce<T.ChartState["subCharts"]>(
+    const sumShrinkedSecSubHeights = shrinkedSecondarySubHeights.reduce((acc, cur) => acc + cur, 0);
+    const resizedSubcharts = subchartsDeleted.reduce<T.ChartState["subcharts"]>(
       (acc, cur, idx) =>
         idx === 0
           ? [
@@ -212,4 +218,42 @@ export const resizeSubcharts = (params: {
     ).filter((val) => val !== null) as T.SubchartState[];
     return [...resizedSubcharts, ...newSubchart];
   }
+};
+
+export const modifyToolProp = (current: T.ChartState, params: T.ReducerAction<"setToolProp">["params"]) => {
+  const { newValue, prop, subchartIdx, yaxisIdx, toolIdx, toolParamIdx } = params;
+  const tool = current.subcharts[subchartIdx].yaxis[yaxisIdx].tools[toolIdx];
+  return prop === "strokeColor" || prop === "anchorColor"
+    ? setStateProp(current, ["subcharts", subchartIdx, "yaxis", yaxisIdx, "tools", toolIdx, "style", prop], newValue)
+    : prop === "hLineYlevel"
+    ? setStateProp(
+        current,
+        ["subcharts", subchartIdx, "yaxis", yaxisIdx, "tools", toolIdx, "xy"],
+        [[tool.xy[0][0], newValue]]
+      )
+    : prop === "toolParam" && !isNullish(toolParamIdx)
+    ? setStateProp(
+        current,
+        ["subcharts", subchartIdx, "yaxis", yaxisIdx, "tools", toolIdx, "params", toolParamIdx, "val"],
+        newValue
+      )
+    : current;
+};
+
+export const modifyGraphProp = (current: T.ChartState, params: T.ReducerAction<"setGraphProp">["params"]) => {
+  const { newValue, prop, subchartIdx, yaxisIdx, graphIdx } = params;
+  return ["strokeColor", "candleDownColor", "candleUpColor", "candleStrokeColor", "candleWickStrokeColor"].includes(
+    prop
+  )
+    ? setStateProp(current, ["subcharts", subchartIdx, "yaxis", yaxisIdx, "graphs", graphIdx, "style", prop], newValue)
+    : prop === "chartType" && (newValue === "line" || newValue === "candles")
+    ? setStateProp(current, ["subcharts", subchartIdx, "yaxis", yaxisIdx, "graphs", graphIdx, "chartType"], newValue)
+    : prop === "dataId"
+    ? setStateProp(current, ["subcharts", subchartIdx, "yaxis", yaxisIdx, "graphs", graphIdx, "dataId"], newValue)
+    : current;
+};
+
+export const removeTool = (current: T.ChartState, params: T.ReducerAction<"removeTool">["params"]) => {
+  const { subchartIdx, yaxisIdx, toolIdx } = params;
+  return removeStateProp(current, ["subcharts", subchartIdx, "yaxis", yaxisIdx, "tools", toolIdx]);
 };

@@ -1,34 +1,54 @@
 import * as T from "../Types";
+import { isNullish } from "../utils";
+import { getAppliedPriceKeys, getPriceToApply } from "./utils";
 
-export const iSMA: T.IndicatorModel = {
+export const iSMA = (period?: number, applyOn?: number | "open" | "high" | "low" | "close") => ({
+  ...SMA,
+  params: SMA.params.map((param) =>
+    param.name === "period" && !isNullish(period)
+      ? { ...param, val: period }
+      : param.name === "applyOn" && !isNullish(applyOn)
+      ? { ...param, val: applyOn }
+      : param
+  ),
+});
+
+export const SMA: T.IndicatorModel = {
   name: "SMA",
   category: "Average",
-  params: [{ name: "period", val: 10 }],
-  default: { params: [{ name: "period", val: 10 }], newSubchart: false },
-  // type: "line",
+  params: [
+    { name: "period", val: 10 },
+    { name: "applyOn", val: 0 },
+  ],
+  default: {
+    params: [
+      { name: "period", val: 10, type: "number" },
+      { name: "applyOn", val: 0, type: "applyOn" },
+    ],
+    newSubchart: false,
+  },
   graphTypes: [{ type: "line" }],
   indicatorFnType: "dataSeries",
   indicatorFn: (params: {
-    chartData: T.Dataset[];
-    prevData: T.IndicatorDataSeries;
+    dataseries: T.Dataset[];
+    prev: T.IndicatorDataSeries;
     period?: number;
-    // applyOn?: "open" | "close" | "high" | "low";
+    applyOn?: number | "open" | "high" | "low" | "close";
   }): T.IndicatorDataSeries => {
-    const { chartData: srcChartData, prevData, period = 20 } = params;
+    const { dataseries: srcChartData, prev, period = 20, applyOn } = params;
+    const { chartPriceKey, indPriceIdx } = getAppliedPriceKeys(applyOn);
 
-    const indicatorData: T.IndicatorDataSeries = [...prevData];
-    srcChartData.slice(prevData?.length ?? 0).forEach((srcDataset, srcDatasetIdx) => {
-      const accumulatedIdx = srcDatasetIdx + (prevData?.length ?? 0);
-
+    const indicatorData: T.IndicatorDataSeries = [...prev];
+    srcChartData.slice(prev?.length ?? 0).forEach((srcDataset, srcDatasetIdx) => {
+      const accumulatedIdx = srcDatasetIdx + (prev?.length ?? 0);
       if (accumulatedIdx < period - 1) {
         indicatorData.push({ prices: [null], date: srcDataset.date });
         return;
       }
       let singleSmaAcc = 0;
-      srcChartData.slice(accumulatedIdx - period + 1, accumulatedIdx + 1).forEach((selSrcDataset, idx, arr) => {
-        if (T.isLineChartDataset(selSrcDataset)) singleSmaAcc += selSrcDataset.close;
-        else if (T.isIndicatorDataset(selSrcDataset))
-          singleSmaAcc += selSrcDataset.prices[0] ? selSrcDataset.prices[0] : 0;
+      srcChartData.slice(accumulatedIdx - period + 1, accumulatedIdx + 1).forEach((selSrcDataset) => {
+        const price = getPriceToApply(selSrcDataset, chartPriceKey, indPriceIdx);
+        singleSmaAcc += price;
       });
       indicatorData.push({ prices: [singleSmaAcc / period], date: srcDataset.date });
     });

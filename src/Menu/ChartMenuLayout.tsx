@@ -19,14 +19,16 @@ export const ChartMenuLayout = (props: {
   isDesktop: boolean;
   onClose: () => void;
   onNavigate: (target: CChartMenuStateType["location"]) => void;
-  Dispatch: T.ChartStateHook["Dispatch"];
+  Dispatch: T.ChartController["Dispatch"];
   fullscreen: boolean;
   location: CChartMenuStateType["location"];
   headerText?: string;
-  settings: T.ChartStateProps["settings"];
+  settings: T.UseChartControllerProps["settings"];
   content: ReactNode;
+  events: T.UseChartControllerProps["events"];
 }) => {
-  const { isDesktop, onClose, location, fullscreen, headerText, onNavigate, Dispatch, settings, content } = props;
+  const { isDesktop, onClose, location, fullscreen, headerText, onNavigate, Dispatch, settings, content, events } =
+    props;
 
   const theme = useTheme();
   const [ThemeAnchorEl, setThemeAnchorEl] = React.useState<HTMLElement | null>(null);
@@ -34,7 +36,7 @@ export const ChartMenuLayout = (props: {
 
   const themes = React.useMemo(
     () =>
-      settings.themes ?? [
+      settings?.themes ?? [
         { ...defaultLightTheme, name: "light" },
         { ...defaultDarkTheme, name: "dark" },
       ],
@@ -47,11 +49,13 @@ export const ChartMenuLayout = (props: {
     onNavigate("menu");
   }, [onNavigate]);
   const toggleFullscreen = React.useCallback(() => {
+    if (!fullscreen) events?.onFullscreen?.();
+    else events?.onFullscreenExit?.();
     Dispatch({
       task: "setGeneralProp",
       params: { prop: "toggleFullscreen" },
     });
-  }, [Dispatch]);
+  }, [Dispatch, fullscreen, events]);
   const openFooterMenu = React.useCallback(
     (event: React.MouseEvent<HTMLButtonElement>, menuName: "theme" | "clear") => {
       if (menuName === "theme") setThemeAnchorEl(event.currentTarget);
@@ -67,7 +71,8 @@ export const ChartMenuLayout = (props: {
   const selectTheme = React.useCallback(
     (themeName: string) => {
       setThemeAnchorEl(null);
-      const selectedTheme = themes.find((theme) => theme.name === themeName);
+      const selectedTheme = (themes as { name: string }[])?.find((theme) => theme.name === themeName);
+      // console.log("Theme selected", selectedTheme);
       if (!selectedTheme) return;
       Dispatch({ task: "setTheme", params: { theme: selectedTheme } });
     },
@@ -125,7 +130,12 @@ export const ChartMenuLayout = (props: {
               verticalAlign: "middle",
             }}
           >
-            <Typography component="div" variant="h5" sx={{ flexGrow: 1, pt: 0.5, pr: 1 }}>
+            <Typography
+              component="div"
+              variant="h5"
+              color={theme.palette.primary.contrastText}
+              sx={{ flexGrow: 1, pr: 1 }}
+            >
               {headerText || ""}
             </Typography>
             <Box sx={{ margin: "-5px" }}>
@@ -184,6 +194,7 @@ export const ChartMenuLayout = (props: {
             <Menu
               id="clear-menu"
               anchorEl={ClearAnchorEl}
+              disablePortal={fullscreen}
               anchorOrigin={{ horizontal: "center", vertical: "top" }}
               transformOrigin={{
                 vertical: "bottom",
@@ -213,7 +224,10 @@ export const ChartMenuLayout = (props: {
                 <MenuItem
                   key={`clearMenuItem-${mIdx}`}
                   onClick={() => {
-                    Dispatch({ task: "clearChart", params: { mode } });
+                    Dispatch({
+                      task: "clearChart",
+                      params: { mode: mode as T.ReducerAction<"clearChart">["params"]["mode"] },
+                    });
                   }}
                 >
                   {mode}
@@ -231,6 +245,7 @@ export const ChartMenuLayout = (props: {
             </IconButton>
             <Menu
               id="theme-menu"
+              disablePortal={fullscreen}
               anchorEl={ThemeAnchorEl}
               anchorOrigin={{ horizontal: "center", vertical: "top" }}
               transformOrigin={{

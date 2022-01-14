@@ -1,15 +1,17 @@
 import * as T from "../Types";
 
-export const iOBV: T.IndicatorModel = {
+export const iOBV = () => OBV;
+
+export const OBV: T.IndicatorModel = {
   name: "OBV",
   category: "Volume",
   graphTypes: [{ type: "line" }],
   params: [],
   default: { params: [], newSubchart: true, decimals: 0 },
   indicatorFnType: "chartSeries",
-  indicatorFn: (params: { chartData: T.ChartDataSeries; prevData: T.IndicatorDataSeries }) => {
-    const { chartData: srcChartData, prevData } = params;
-    const indicatorData: T.IndicatorDataset[] = prevData ? prevData : [];
+  indicatorFn: (params: { dataseries: T.ChartDataSeries; prev: T.IndicatorDataSeries }) => {
+    const { dataseries: srcChartData, prev } = params;
+    const indicatorData: T.IndicatorDataset[] = prev ? prev : [];
     for (let i = indicatorData?.length; i < srcChartData.length; i++) {
       const dataset = srcChartData[i];
       if (i === 0 && T.isVolumeDataset(dataset)) {
@@ -23,7 +25,7 @@ export const iOBV: T.IndicatorModel = {
         continue;
       }
       const lastObvVal = lastObv?.prices?.[0] ?? 0;
-      const obv = lastObvVal + Math.sign(dataset.close - dataset1.close) * dataset.volume; //+ dataset1.volume;
+      const obv = lastObvVal + Math.sign(dataset.close - dataset1.close) * dataset.volume;
       indicatorData.push({ prices: [obv], date: srcChartData[i].date });
     }
     return indicatorData;

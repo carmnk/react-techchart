@@ -12,15 +12,16 @@ import * as T from "../../Types";
 
 export type SubchartTreeItemProps = {
   subchartIdx: number;
-  subcharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   data: T.ChartState["data"];
-  Dispatch: T.ChartStateHook["Dispatch"];
+  Dispatch: T.ChartController["Dispatch"];
   onSettingsExpand: (id: string) => void;
   additionalLabelInfo?: JSX.Element | null;
+  fullscreen: boolean;
 };
 
 export const SubchartTreeItem = React.forwardRef((props: SubchartTreeItemProps, ref: any) => {
-  const { subchartIdx, subcharts, data, Dispatch, onSettingsExpand, additionalLabelInfo, ...other } = props;
+  const { subchartIdx, subcharts, data, Dispatch, onSettingsExpand, additionalLabelInfo, fullscreen, ...other } = props;
   const theme = useTheme();
   const subchart = subcharts[subchartIdx];
 
@@ -69,24 +70,26 @@ export const SubchartTreeItem = React.forwardRef((props: SubchartTreeItemProps, 
         T.isIndicatorGraph(graph) ? (
           <ChartMenuIndiGraphTreeItem
             key={`editIndicator-sub-${subchartIdx}-yaxis-${0}-graph-${graphIdx}`}
-            subCharts={subcharts}
+            graphs={subcharts?.[subchartIdx]?.yaxis?.[0]?.graphs}
             Dispatch={Dispatch}
             subchartIdx={subchartIdx}
             yaxisIdx={0}
             graphIdx={graphIdx}
             handleToggleExpanded={onSettingsExpand}
             data={data}
+            fullscreen={fullscreen}
           />
         ) : T.isChartGraph(graph) ? (
           <ChartMenuChartGraphTreeItem
             key={`graph-sub-${subchartIdx}-y-${0}-graph-${graphIdx}-frag`}
-            subCharts={subcharts}
+            subcharts={subcharts}
             Dispatch={Dispatch}
             subchartIdx={subchartIdx}
             yaxisIdx={0}
             graphIdx={graphIdx}
             onSettingsExpand={onSettingsExpand}
             data={data}
+            fullscreen={fullscreen}
           />
         ) : null
       )}
@@ -118,12 +121,13 @@ export const SubchartTreeItem = React.forwardRef((props: SubchartTreeItemProps, 
           {subchart.yaxis[0].tools.map((tool, toolIdx) => (
             <ChartMenuToolTreeItem
               key={`editTool-sub-${subchartIdx}-yaxis-${0}-tool-${toolIdx}`}
-              subCharts={subcharts}
+              subcharts={subcharts}
               Dispatch={Dispatch}
               subchartIdx={subchartIdx}
               yaxisIdx={0}
               toolIdx={toolIdx}
               handleToggleExpanded={onSettingsExpand}
+              fullscreen={fullscreen}
             />
           ))}
         </CTreeItem>

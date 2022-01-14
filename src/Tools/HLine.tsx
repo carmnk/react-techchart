@@ -4,7 +4,7 @@ import { mdiSetLeft } from "@mdi/js";
 import * as T from "../Types";
 
 export type CHLineProps = {
-  subcharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   subchartIdx: number;
   xy: [number, number][];
   drawPixXy?: [number, number][];

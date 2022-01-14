@@ -1,13 +1,11 @@
+import React from "react";
 import IconButton from "@mui/material/IconButton";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import useTheme from "@mui/material/styles/useTheme";
-
 import { mdiChartLine, mdiClose, mdiBorderColor, mdiSetLeft } from "@mdi/js";
 import Icon from "@mdi/react";
-import React from "react";
 import { CIcon } from "../../Components/CIcon";
 import { CMColorPropTreeItem } from "./CMColorPropTreeItem";
+import { CMSelectPropTreeItem } from "./CMSelectPropTreeItem";
 import { CTreeItem } from "../../Components/CTreeItem";
 import * as T from "../../Types";
 
@@ -15,13 +13,14 @@ export const ChartMenuChartGraphTreeItem = (props: {
   subchartIdx: number;
   yaxisIdx: number;
   graphIdx: number;
-  subCharts: T.ChartState["subCharts"];
-  Dispatch: T.ChartStateHook["Dispatch"];
+  subcharts: T.ChartState["subcharts"];
+  Dispatch: T.ChartController["Dispatch"];
   onSettingsExpand: (id: string) => void;
   data: T.ChartState["data"];
+  fullscreen: boolean;
 }) => {
-  const { subchartIdx, yaxisIdx, graphIdx, subCharts, Dispatch, onSettingsExpand, data } = props;
-  const graph = subCharts?.[subchartIdx]?.yaxis?.[yaxisIdx]?.graphs?.[graphIdx];
+  const { subchartIdx, yaxisIdx, graphIdx, subcharts, Dispatch, onSettingsExpand, data, fullscreen } = props;
+  const graph = subcharts?.[subchartIdx]?.yaxis?.[yaxisIdx]?.graphs?.[graphIdx];
   const theme = useTheme();
   const dataGraph = data.find((val) => val.id === graph?.dataId) as T.ChartData | undefined;
 
@@ -143,11 +142,7 @@ export const ChartMenuChartGraphTreeItem = (props: {
             size="small"
             onClick={(e: any) => {
               e.preventDefault();
-              const action: T.ReducerAction<"removeGraph"> = {
-                task: "removeGraph",
-                params: { subchartIdx, yaxisIdx, graphIdx },
-              };
-              Dispatch(action);
+              Dispatch({ task: "removeGraph", params: { subchartIdx, yaxisIdx, graphIdx } });
             }}
           >
             <Icon path={mdiClose} size={1} color={theme.palette.mode === "light" ? "#333" : "#fff"} />
@@ -156,45 +151,20 @@ export const ChartMenuChartGraphTreeItem = (props: {
       }
     >
       {graph.type === "chart" && dataGraph?.meta.type === "candlechart" ? (
-        <CTreeItem
-          key={`chart-s${subchartIdx}-y${yaxisIdx}-g${graphIdx}-chartType`}
+        <CMSelectPropTreeItem
           nodeId={`chart-s${subchartIdx}-y${yaxisIdx}-g${graphIdx}-chartType`}
-          labelText={"chart type"}
-          typographyVariant="body1"
+          key={`chart-s${subchartIdx}-y${yaxisIdx}-g${graphIdx}-chartType`}
           labelIcon={<CIcon path={mdiSetLeft} size={"24px"} color={theme.palette.mode === "light" ? "#333" : "#fff"} />}
-          labelInfo={
-            <Select
-              size="small"
-              margin="none"
-              SelectDisplayProps={{
-                style: { paddingTop: 2, paddingBottom: 2 },
-              }}
-              // inputProps={{ style: { padding: 0, minWidth: 50 } }}
-              value={graph.chartType}
-              onChange={(e: any) => {
-                const newValue = e.target.value;
-                Dispatch({
-                  task: "setGraphProp",
-                  params: {
-                    prop: "chartType",
-                    subchartIdx,
-                    yaxisIdx,
-                    graphIdx,
-                    newValue,
-                  },
-                });
-              }}
-            >
-              {["line", "candles"].map((optionVal: any, optValIdx: number) => (
-                <MenuItem
-                  key={`chart-s${subchartIdx}-y${yaxisIdx}-g${graphIdx}-chartType-o-${optValIdx}`}
-                  value={optionVal}
-                >
-                  {optionVal}
-                </MenuItem>
-              ))}
-            </Select>
-          }
+          labelText={"chart type"}
+          value={graph.chartType}
+          options={["line", "candles"]}
+          fullscreen={fullscreen}
+          onChangeConfirmed={(newValue) => {
+            Dispatch({
+              task: "setGraphProp",
+              params: { prop: "chartType", subchartIdx, yaxisIdx, graphIdx, newValue },
+            });
+          }}
         />
       ) : null}
       {graphColorProps(graph).map((graphColorProp, gcIdx) => (
@@ -204,6 +174,7 @@ export const ChartMenuChartGraphTreeItem = (props: {
           text={graphColorProp.text}
           color={graphColorProp.color}
           iconPath={graphColorProp.icon}
+          fullscreen={fullscreen}
           onColorSelected={graphColorProp.onColorSelected}
         />
       ))}

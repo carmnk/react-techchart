@@ -1,13 +1,29 @@
 import uniq from "lodash/uniq";
-import { createChartData, createData, createIndicatorData, getIndicatorsCalcDepIndicatorDatas } from "./DataFactory";
+import { createIndicatorData, getIndicatorsCalcDepIndicatorDatas } from "./IndicatorDataFactory";
 import { createSubChartModel, createChartGraphModel } from "./SubchartFactory";
 import { createIndicatorGraphModel, resizeSubcharts } from "./SubchartFactory";
 import { getDefaultGraphStyle, getGraphColors, getInitSubchartsState } from "../Defaults";
 import { graphColorsDark, graphColorsLight } from "../Defaults";
-import { resizeContainer } from "../Interactions";
+import { resizeContainer } from "../Interactions/CalcInteractions";
 import { setStateProp, removeStateProp } from "../../utils/React";
 import { isNullish } from "../../utils/Basics";
 import * as T from "../../Types";
+import { jumpToXaxisEnd } from "../Calc/CalcXaxis";
+import { createChartData } from "./ChartDataFactory";
+
+export const createData = (
+  chartSeries: T.DataSeries,
+  chartName: string,
+  id: string,
+  indicator?: T.IndicatorModel,
+  indSrcId?: string,
+  indSrcLineIdx?: number
+): T.Data | null =>
+  !!indicator && !!indSrcId
+    ? createIndicatorData(chartSeries, indSrcId, indicator, indSrcLineIdx, id, chartName)
+    : T.isChartDataSeries(chartSeries)
+    ? createChartData(chartSeries, chartName, id)
+    : null;
 
 export const addSubchart = (current: T.ChartState, params: T.ReducerAction<"addSubchart">["params"]): T.ChartState => {
   const { dataSeries: srcData, graphName, id, indicator, reset, indSrcId } = params;
@@ -16,29 +32,36 @@ export const addSubchart = (current: T.ChartState, params: T.ReducerAction<"addS
   const data = createData(srcData, graphName, id, indicator, indSrcId);
   if (!data) return current;
   const indicatorLines = data.type === "indicator" ? data.indicator.graphTypes.length : undefined;
-  const style = getDefaultGraphStyle(data.type, current.options.isDarkMode, undefined, indicatorLines);
+  const style = getDefaultGraphStyle(data.type, current.theme.isDarkMode, undefined, indicatorLines);
   const dataId = data.id;
-  if (current.subCharts.length === 0 || !!reset) {
+  if (current.subcharts.length === 0 || !!reset) {
     const top = 0;
-    const bottom = containerHeight - current.options.xaxis.heightXAxis;
+    const bottom = containerHeight - current.theme.xaxis.heightXAxis;
     const newSubchart = createSubChartModel({ top, bottom, dataId, style, indicator, type: data.type });
     if (!newSubchart) return current;
+    const calc = current.calc;
+    const mainchartDataseries = [data]?.find?.((dat) => dat.id === dataId && dat.type === "chart")
+      ?.data as T.ChartDataSeries;
+    const containerWidth = current.containerSize.width;
+    const xaxis =
+      (mainchartDataseries && jumpToXaxisEnd(calc.xaxis, mainchartDataseries, containerWidth)) || current.calc.xaxis;
     return {
       ...current,
       data: [data],
-      subCharts: [newSubchart],
+      subcharts: [newSubchart],
+      calc: { ...calc, xaxis },
     };
   } else {
-    const subchartsHeight = containerHeight - current.options.xaxis.heightXAxis;
-    const subCharts = resizeSubcharts({
+    const subchartsHeight = containerHeight - current.theme.xaxis.heightXAxis;
+    const resizedSubcharts = resizeSubcharts({
       subchartsHeight,
-      subCharts: current.subCharts,
-      addSubchart: { data, darkMode: current.options.isDarkMode },
+      subcharts: current.subcharts,
+      addSubchart: { data, darkMode: current.theme.isDarkMode },
     });
     return {
       ...current,
       data: [...current.data, data],
-      subCharts,
+      subcharts: resizedSubcharts,
     };
   }
 };
@@ -48,31 +71,31 @@ export const removeSubchart = (
   params: T.ReducerAction<"removeSubchart">["params"]
 ): T.ChartState => {
   const { subchartIdx: delSubIdx } = params;
-  const dataIds = current.subCharts[delSubIdx].yaxis.map((yaxi) => yaxi.graphs.map((graph) => graph.dataId)).flat();
-  const subchartsHeight = current.containerSize.height - current.options.xaxis.heightXAxis;
-  const subCharts = resizeSubcharts({
+  const dataIds = current.subcharts[delSubIdx].yaxis.map((yaxi) => yaxi.graphs.map((graph) => graph.dataId)).flat();
+  const subchartsHeight = current.containerSize.height - current.theme.xaxis.heightXAxis;
+  const subcharts = resizeSubcharts({
     subchartsHeight,
-    subCharts: current.subCharts,
+    subcharts: current.subcharts,
     removeSubchartIdx: delSubIdx,
   });
   return {
     ...current,
     data: current.data.filter((singleData) => !dataIds.includes(singleData.id)),
-    subCharts,
+    subcharts,
   };
 };
 
 export const addGraph = (current: T.ChartState, params: T.ReducerAction<"addGraph">["params"]): T.ChartState => {
   const { dataSeries, graphName, subchartIdx, id, indSrcId, indicator, indSrcLineIdx } = params;
-  const newGraphIdx = current.subCharts[subchartIdx].yaxis[0].graphs.length;
+  const newGraphIdx = current.subcharts[subchartIdx].yaxis[0].graphs.length;
   const getStrokeColor = (idx: number) =>
-    getGraphColors(current.options.isDarkMode ? graphColorsDark : graphColorsLight, idx);
+    getGraphColors(current.theme.isDarkMode ? graphColorsDark : graphColorsLight, idx);
   if ((!indSrcId && indicator) || (indSrcId && !indicator)) return current;
   const data = createData(dataSeries, graphName, id, indicator, indSrcId, indSrcLineIdx);
   if (!data) return current;
   const dataId = data.id;
   const indicatorLines = data.type === "indicator" ? data.indicator.graphTypes.length : undefined;
-  const style = getDefaultGraphStyle(data.type, current.options.isDarkMode, newGraphIdx, indicatorLines);
+  const style = getDefaultGraphStyle(data.type, current.theme.isDarkMode, newGraphIdx, indicatorLines);
   const graph =
     data.type === "indicator" && !!indicator && !!indSrcId
       ? createIndicatorGraphModel({
@@ -84,8 +107,8 @@ export const addGraph = (current: T.ChartState, params: T.ReducerAction<"addGrap
     graph.style.strokeColor = (data as T.IndicatorData).data[data.data.length - 1].prices.map((x, idx) =>
       getStrokeColor(idx)
     );
-  const subchart = current.subCharts[subchartIdx];
-  return setStateProp(setStateProp(current, ["data"], [...current.data, data]), ["subCharts", subchartIdx], {
+  const subchart = current.subcharts[subchartIdx];
+  return setStateProp(setStateProp(current, ["data"], [...current.data, data]), ["subcharts", subchartIdx], {
     ...subchart,
     yaxis: [{ ...subchart.yaxis[0], graphs: [...subchart.yaxis[0].graphs, graph] }],
   });
@@ -93,20 +116,20 @@ export const addGraph = (current: T.ChartState, params: T.ReducerAction<"addGrap
 
 export const removeGraph = (current: T.ChartState, params: T.ReducerAction<"removeGraph">["params"]): T.ChartState => {
   const { subchartIdx: delSubIdx, yaxisIdx: delYIdx, graphIdx: delGraphIdx } = params;
-  const dataId = current.subCharts[delSubIdx].yaxis[delYIdx].graphs[delGraphIdx].dataId;
-  const subchart = current.subCharts[delSubIdx];
+  const dataId = current.subcharts[delSubIdx].yaxis[delYIdx].graphs[delGraphIdx].dataId;
+  const subchart = current.subcharts[delSubIdx];
   if (delGraphIdx === 0 && subchart.yaxis[delYIdx].graphs.length === 1) {
     return removeSubchart(current, { subchartIdx: delSubIdx });
   } else {
     return setStateProp(
-      removeStateProp(current, ["subCharts", delSubIdx, "yaxis", delYIdx, "graphs", delGraphIdx]),
+      removeStateProp(current, ["subcharts", delSubIdx, "yaxis", delYIdx, "graphs", delGraphIdx]),
       ["data"],
       current.data.filter((val) => val.id !== dataId)
     );
   }
 };
 
-export const addInitialData = (current: T.ChartState, params: T.ReducerAction<"addData">["params"]): T.ChartState => {
+export const initData = (current: T.ChartState, params: T.ReducerAction<"initData">["params"]): T.ChartState => {
   const { datas: inputData } = params;
   const mainchartId = inputData?.[0]?.id as string;
   const intInputData = inputData.map((inputDat, inputDatIdx) =>
@@ -120,20 +143,20 @@ export const addInitialData = (current: T.ChartState, params: T.ReducerAction<"a
   );
   const sequencedIndiTest = uniq(
     intInputData
-      .map((inputDat, inputDatIdx) =>
+      .map((inputDat) =>
         inputDat.type === "indicator" && !isNullish(inputDat?.id)
-          ? getIndicatorsCalcDepIndicatorDatas(intInputData as any, inputDat.id)
+          ? getIndicatorsCalcDepIndicatorDatas(intInputData, inputDat.id)
           : null
       )
       .flat()
-      .filter((val) => val !== null) as unknown as string[]
+      .filter((val) => val !== null) as string[]
   );
   const chartDatas = intInputData.map((dat) =>
     dat.type === "chart" ? createChartData(dat.data, dat.name, dat.id) : null
   );
   const datasCopy = [...chartDatas] as (T.Data | null)[];
-  sequencedIndiTest.forEach((dataId, i) => {
-    const inputDatIdx = intInputData?.findIndex((dat, dIdx) => dat.id === dataId); // [dataIdx];
+  sequencedIndiTest.forEach((dataId) => {
+    const inputDatIdx = intInputData?.findIndex((dat) => dat.id === dataId); // [dataIdx];
     const inputDat = intInputData?.[inputDatIdx];
     const indInputData = inputDat?.type === "indicator" ? inputDat : null;
     const indDataSrcId = indInputData?.indSrcId;
@@ -150,20 +173,25 @@ export const addInitialData = (current: T.ChartState, params: T.ReducerAction<"a
   });
   const finalDatas = datasCopy.filter((val) => val !== null) as T.Data[];
   if (finalDatas.length !== intInputData.length) console.warn("Warning - not all indicators could be initialized.");
-  const initSubcharts = inputData ? getInitSubchartsState(current.options.isDarkMode, inputData) : [];
-  const subCharts = resizeContainer(current.containerSize.height, initSubcharts, current.options);
-  return { ...current, subCharts, data: finalDatas };
+  const initSubcharts = inputData ? getInitSubchartsState(current.theme.isDarkMode, inputData) : [];
+  const subcharts = resizeContainer(current.containerSize.height, { ...current, subcharts: initSubcharts });
+  const calc = current.calc;
+  const mainchartDataseries = finalDatas?.find?.((dat) => dat.id === mainchartId && dat.type === "chart")
+    ?.data as T.ChartDataSeries;
+  const containerWidth = current.containerSize.width;
+  const xaxis =
+    (mainchartDataseries && jumpToXaxisEnd(calc.xaxis, mainchartDataseries, containerWidth)) || current.calc.xaxis;
+  return { ...current, subcharts, data: finalDatas, calc: { ...calc, xaxis } };
 };
 
 export const clearChart = (current: T.ChartState, params: T.ReducerAction<"clearChart">["params"]) => {
   const { mode } = params;
-  const clearedSubcharts = current.subCharts
+  const clearedSubcharts = current.subcharts
     .map((sub, sIdx) =>
       mode === "tools" || sIdx === 0
         ? {
             ...sub,
-            bottom:
-              mode !== "tools" ? current.containerSize.height - 1 - current.options.xaxis.heightXAxis : sub.bottom,
+            bottom: mode !== "tools" ? current.containerSize.height - 1 - current.theme.xaxis.heightXAxis : sub.bottom,
             yaxis: sub.yaxis.map((yax) => ({
               ...yax,
               graphs: mode !== "tools" ? [yax.graphs?.[0]] : yax.graphs,
@@ -175,11 +203,11 @@ export const clearChart = (current: T.ChartState, params: T.ReducerAction<"clear
     .filter((sub) => sub !== null);
   return mode === "all" || mode === "indicators"
     ? setStateProp(
-        setStateProp(current, ["subCharts"], clearedSubcharts),
+        setStateProp(current, ["subcharts"], clearedSubcharts),
         ["data"],
-        [current.data.find((val) => val.id === current.subCharts?.[0]?.yaxis?.[0]?.graphs?.[0]?.dataId)]
+        [current.data.find((val) => val.id === current.subcharts?.[0]?.yaxis?.[0]?.graphs?.[0]?.dataId)]
       )
     : mode === "tools"
-    ? setStateProp(current, ["subCharts"], clearedSubcharts)
+    ? setStateProp(current, ["subcharts"], clearedSubcharts)
     : current;
 };

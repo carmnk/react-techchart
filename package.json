@@ -1,37 +1,38 @@
 {
   "name": "react-tech-chart",
   "version": "0.1.0",
-  "description": "a react charting component dedicated to technical analysis",
+  "description": "a react charting component designed for technical analysis",
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint ./src",
     "prettier": "prettier --write \"./src\"",
-    "build": "tsc"
+    "build": "npm run lint && tsc",
+    "push": "tsc && yalc push"
   },
   "keywords": [
     "react",
-    "charting"
+    "charting",
+    "technical analysis"
   ],
   "author": "C. Menk",
   "license": "MIT",
   "dependencies": {
     "@emotion/react": "^11.7.0",
-    "@emotion/styled": "^11.3.0",
-    "@mdi/js": "^5.9.55",
+    "@emotion/styled": "^11.6.0",
+    "@mdi/js": "^6.5.95",
     "@mdi/react": "^1.5.0",
     "@mui/lab": "^5.0.0-alpha.47",
     "@mui/material": "^5.2.0",
     "@use-gesture/react": "^10.2.0",
-    "csv-parse": "^4.16.0",
+    "csv-parse": "^5.0.4",
     "date-fns": "^2.21.3",
-    "konva": "^7.2.5",
+    "konva": "^8.3.1",
     "lodash": "^4.17.21",
     "react-beautiful-dnd": "^13.1.0",
     "react-konva": "^17.0.2-5",
     "react-resize-detector": "^6.7.4",
     "react-use": "^17.2.4",
-    "react-use-gesture": "^9.1.3",
     "uniqid": "^5.4.0"
   },
   "peerDependencies": {

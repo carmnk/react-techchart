@@ -5,7 +5,7 @@ import { GraphLabel } from "./GraphLabel";
 
 export const ChartLabels = (props: {
   data: T.ChartState["data"];
-  subcharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   calcPointer: T.ChartState["calc"]["pointer"];
   calcSubcharts: T.ChartState["calc"]["subcharts"];
   onGraphLabelClick: (
@@ -14,8 +14,7 @@ export const ChartLabels = (props: {
     graphIdx: number
   ) => void;
 }) => {
-  const { data, calcPointer, calcSubcharts, subcharts, onGraphLabelClick } =
-    props;
+  const { data, calcPointer, calcSubcharts, subcharts, onGraphLabelClick } = props;
   return (
     <React.Fragment>
       {subcharts.map((subchart, sIdx) => (
@@ -33,13 +32,9 @@ export const ChartLabels = (props: {
             const calcGraph = calcSubcharts?.[sIdx]?.yaxis?.[0]?.graphs?.[gIdx];
             if (!calcGraph?.lastDataset || !graphData) return null;
             const name =
-              T.isIndicatorGraph(graph) &&
-              graphData.type === "indicator" &&
-              graphData.indicator.params.length > 0
+              T.isIndicatorGraph(graph) && graphData.type === "indicator" && graphData.indicator.params.length > 0
                 ? `${graphData.indicator.name}(${graphData.indicator.params[0].val})`
-                : T.isIndicatorGraph(graph) &&
-                  graphData.type === "indicator" &&
-                  graphData.indicator.params.length === 0
+                : T.isIndicatorGraph(graph) && graphData.type === "indicator" && graphData.indicator.params.length === 0
                 ? `${graphData.indicator.name}`
                 : graphData.name;
             const tmpDataset: T.Dataset =
@@ -66,11 +61,7 @@ export const ChartLabels = (props: {
                     ? graphData.indicator.default.decimals
                     : graphDecimals
                 }
-                graphTypes={
-                  graphData?.type === "indicator"
-                    ? graphData?.indicator?.graphTypes
-                    : undefined
-                }
+                graphTypes={graphData?.type === "indicator" ? graphData?.indicator?.graphTypes : undefined}
               />
             );
           })}

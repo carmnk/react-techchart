@@ -1,6 +1,7 @@
 import React from "react";
 import { Shape } from "react-konva";
 
+// this component should not exist but halign, valign were not working
 export type CTextProps = {
   text: string;
   x: number;
@@ -37,5 +38,4 @@ export const CTextComponent = (props: CTextProps) => {
 
   return <Shape name={name} listening={false} sceneFunc={drawText} />;
 };
-
 export const CText = React.memo(CTextComponent);

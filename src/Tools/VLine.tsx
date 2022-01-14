@@ -4,7 +4,7 @@ import { mdiSetLeft } from "@mdi/js";
 import * as T from "../Types";
 
 export type CVLineProps = {
-  subcharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   subchartIdx: number;
   xy: [number, number][];
   drawPixXy?: [number, number][];
@@ -41,7 +41,6 @@ export const CVLineComponent = (props: CVLineProps) => {
     [PixXy[0], modeInt === "extendDown" ? PixXy[1] : subchartTop],
     [PixXy[0], modeInt === "extendUp" ? PixXy[1] : lowestBottom],
   ];
-
 
   return (
     <React.Fragment>

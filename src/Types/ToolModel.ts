@@ -1,5 +1,5 @@
-import { ChartState } from "./ChartState";
-import { ToolState } from "./ChartStateSubchart";
+import { ChartState } from "./chartstate/chartstate";
+import { ToolState } from "./chartstate/subcharts";
 
 export type ToolModel = {
   name: string;
@@ -12,7 +12,7 @@ export type ToolModel = {
     // style?: any;
   };
   component: (props: {
-    subcharts: ChartState["subCharts"];
+    subcharts: ChartState["subcharts"];
     subchartIdx: number;
     // yaxisIdx: number;
     // toolIdx: number;
@@ -27,4 +27,4 @@ export type ToolModel = {
     pixToY?: (pixY: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;
     [key: string]: any;
   }) => JSX.Element | null;
-}; 
+};

@@ -1,37 +1,45 @@
 import React from "react";
 import IconButton from "@mui/material/IconButton";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import TextField from "@mui/material/TextField";
 import useTheme from "@mui/material/styles/useTheme";
-import {
-  mdiChartBellCurve,
-  mdiClose,
-  mdiBorderColor,
-  mdiIframeVariableOutline,
-  mdiDatabaseExportOutline,
-} from "@mdi/js";
+import { mdiChartBellCurve, mdiClose, mdiBorderColor } from "@mdi/js";
+import { mdiApplicationVariableOutline, mdiDatabaseExportOutline } from "@mdi/js";
 import Icon from "@mdi/react";
 import { CIcon } from "../../Components/CIcon";
 import { CTreeItem } from "../../Components/CTreeItem";
 import * as T from "../../Types";
-import { isCircularIndicatorDependency } from "../../ChartState/Reducer/DataFactory";
+import { isCircularIndicatorDependency } from "../../ChartState/Factory/IndicatorDataFactory";
 import { CMColorPropTreeItem } from "./CMColorPropTreeItem";
+import { CMNumberPropTreeItem } from "./CMNumberPropTreeItem";
+import { CMSelectPropTreeItem } from "./CMSelectPropTreeItem";
 
-export const ChartMenuIndiGraphTreeItem = (props: {
+export const ChartMenuIndiGraphTreeItemComponent = (props: {
   subchartIdx: number;
   yaxisIdx: number;
   graphIdx: number;
-  subCharts: T.ChartState["subCharts"];
-  Dispatch: T.ChartStateHook["Dispatch"];
+  graphs: T.GraphState[];
+  Dispatch: T.ChartController["Dispatch"];
   handleToggleExpanded?: (id: string) => void;
   data: T.ChartState["data"];
+  fullscreen: boolean;
 }) => {
-  const { subchartIdx, yaxisIdx, graphIdx, subCharts, Dispatch, handleToggleExpanded, data } = props;
-  const graphGeneric = subCharts[subchartIdx].yaxis[yaxisIdx].graphs[graphIdx];
-  const graph = T.isIndicatorGraph(graphGeneric) ? graphGeneric : null;
+  const { subchartIdx, yaxisIdx, graphIdx, graphs, Dispatch, handleToggleExpanded, data, fullscreen } = props;
+  const graph = graphs[graphIdx];
   const theme = useTheme();
   const dataGraph = data.find((val) => val.id === graph?.dataId) as T.IndicatorData;
+  const initParams = dataGraph.indicator.params;
+  const initParamVals = initParams.map((param) => param.val);
+
+  const modifyNumericParam = React.useCallback(
+    (dataId: string, paramIdx: number) => (newValue: number | string) => {
+      Dispatch({
+        task: "modifyIndicatorData",
+        params: { dataId, newParam: { paramIdx, newValue } },
+      });
+    },
+    [Dispatch]
+  );
+
+  if (!T.isIndicatorGraph(graph)) return null;
   if (!graph || dataGraph?.type !== "indicator") return null;
 
   return (
@@ -70,65 +78,40 @@ export const ChartMenuIndiGraphTreeItem = (props: {
         ) : undefined
       }
     >
-      <CTreeItem
-        key={`settings-treeitem-indiGraph-src-s${subchartIdx}-y${yaxisIdx}-g${graphIdx}`}
-        nodeId={`settings-treeitem-indiGraph-src-s${subchartIdx}-y${yaxisIdx}-g${graphIdx}`}
-        labelIcon={<CIcon path={mdiDatabaseExportOutline} size={"24px"} color={theme.palette.text.primary} />}
-        labelText="Source"
-        typographyVariant="body1"
-        labelInfo={
-          <Select
-            size="small"
-            margin="none"
-            SelectDisplayProps={{ style: { paddingTop: 2, paddingBottom: 2 } }}
-            value={dataGraph.indSrcId}
-            onChange={(e: any) => {
-              const newValue = e.target.value;
-              Dispatch({
-                task: "modifyIndicatorData",
-                params: {
-                  dataId: dataGraph.id,
-                  newIndSrcId: newValue,
-                },
-              });
-            }}
-          >
-            {["dataSeries", "chartSeries"].includes(dataGraph.indicator.indicatorFnType)
-              ? (() => {
-                  const subchartDataIds = subCharts[subchartIdx].yaxis[yaxisIdx].graphs.map((graph) => graph.dataId);
-                  const filteredIndDatas = !dataGraph.indicator.default.newSubchart
-                    ? data.filter((dat) => subchartDataIds.includes(dat.id))
-                    : dataGraph.indicator.indicatorFnType === "dataSeries"
-                    ? data
-                    : dataGraph.indicator.indicatorFnType === "chartSeries"
-                    ? data.filter((dat) => dat.type === "chart")
-                    : [];
-                  return filteredIndDatas.map((dat) =>
-                    dat.id !== dataGraph.id && !isCircularIndicatorDependency(data, dataGraph.id, dat.id) ? (
-                      <MenuItem
-                        key={`settings-treeitem-indiGraph-src-menuitem-s${subchartIdx}-y${yaxisIdx}-g${graphIdx}-${dat.id}`}
-                        value={dat.id}
-                      >
-                        {dat.name}
-                      </MenuItem>
-                    ) : null
-                  );
-                })()
-              : null}
-          </Select>
-        }
-      />
+      {["dataSeries", "chartSeries"].includes(dataGraph.indicator.indicatorFnType) && (
+        <CMSelectPropTreeItem
+          nodeId={`settings-treeitem-indiGraph-src-s${subchartIdx}-y${yaxisIdx}-g${graphIdx}`}
+          labelIcon={<CIcon path={mdiDatabaseExportOutline} size={"24px"} color={theme.palette.text.primary} />}
+          labelText="Source"
+          value={dataGraph.indSrcId}
+          fullscreen={fullscreen}
+          options={(!dataGraph.indicator.default.newSubchart
+            ? data.filter((dat) => graphs.map((graph) => graph.dataId).includes(dat.id))
+            : dataGraph.indicator.indicatorFnType === "dataSeries"
+            ? data
+            : dataGraph.indicator.indicatorFnType === "chartSeries"
+            ? data.filter((dat) => dat.type === "chart")
+            : []
+          )
+            .filter((dat) => dat.id !== dataGraph.id && !isCircularIndicatorDependency(data, dataGraph.id, dat.id))
+            .map((dat) => ({ value: dat.id, text: dat.name }))}
+          onChangeConfirmed={(newValue) => {
+            if (typeof newValue !== "string") return;
+            Dispatch({ task: "modifyIndicatorData", params: { dataId: dataGraph.id, newIndSrcId: newValue } });
+          }}
+        />
+      )}
 
       {dataGraph.indicator.graphTypes.map((gType, gtIdx) => {
         const colors = graph.style.strokeColor;
-
         return (
           <CMColorPropTreeItem
             nodeId={`settings-treeitem-indiGraph-clrProps-${subchartIdx}-y${yaxisIdx}-g${graphIdx}-gt${gtIdx}`}
             key={`settings-treeitem-indiGraph-clrProps-${subchartIdx}-y${yaxisIdx}-g${graphIdx}-gt${gtIdx}`}
-            color={subCharts[subchartIdx].yaxis[0].graphs[graphIdx].style?.strokeColor?.[gtIdx]}
+            color={graphs[graphIdx].style?.strokeColor?.[gtIdx]}
             iconPath={mdiBorderColor}
             text="line stroke color"
+            fullscreen={fullscreen}
             onColorSelected={(color) => {
               Dispatch({
                 task: "setGraphProp",
@@ -144,35 +127,44 @@ export const ChartMenuIndiGraphTreeItem = (props: {
           />
         );
       })}
-      {dataGraph.indicator.params.map((param, paramIdx) => (
-        <CTreeItem
-          key={`sub-${subchartIdx}-yaxis-${yaxisIdx}-graph-${graphIdx}-${paramIdx}`}
-          nodeId={`${2 + subchartIdx}00-${graphIdx}-${paramIdx}`}
-          labelIcon={<CIcon path={mdiIframeVariableOutline} size={"24px"} color={theme.palette.text.primary} />}
-          labelText={param.name}
-          typographyVariant="body1"
-          labelInfo={
-            <TextField
-              variant="outlined"
-              margin="none"
-              size="small"
-              inputProps={{ style: { padding: 5, width: 50 } }}
-              value={param.val}
-              onChange={(e: any) => {
-                const val = parseFloat(e.target.value);
-                if (isNaN(val)) return;
-                Dispatch({
-                  task: "modifyIndicatorData",
-                  params: {
-                    dataId: dataGraph.id,
-                    newParam: { paramIdx, newValue: val },
-                  },
-                });
-              }}
-            />
-          }
-        />
-      ))}
+      {initParams.map((param, paramIdx) => {
+        const defParam = dataGraph.indicator.default?.params?.find((defParam) => defParam?.name === param?.name);
+        const srcData = data?.find((dat) => dat.id === dataGraph.indSrcId);
+        return defParam?.type === "number" ? (
+          <CMNumberPropTreeItem
+            key={`sub-${subchartIdx}-yaxis-${yaxisIdx}-graph-${graphIdx}-${paramIdx}`}
+            nodeId={`sub-${subchartIdx}-yaxis-${yaxisIdx}-graph-${graphIdx}-${paramIdx}`}
+            labelText={param.name}
+            labelIcon={<CIcon path={mdiApplicationVariableOutline} size={"24px"} color={theme.palette.text.primary} />}
+            onChangeConfirmed={modifyNumericParam?.(dataGraph.id, paramIdx)}
+            value={initParamVals?.[paramIdx] as number}
+          />
+        ) : defParam?.type === "select" || defParam?.type === "applyOn" ? (
+          <CMSelectPropTreeItem
+            key={`sub-${subchartIdx}-yaxis-${yaxisIdx}-graph-${graphIdx}-${paramIdx}`}
+            nodeId={`sub-${subchartIdx}-yaxis-${yaxisIdx}-graph-${graphIdx}-${paramIdx}`}
+            labelText={param.name}
+            labelIcon={<CIcon path={mdiApplicationVariableOutline} size={"24px"} color={theme.palette.text.primary} />}
+            fullscreen={fullscreen}
+            value={
+              defParam?.type === "applyOn" && srcData?.type === "chart" && typeof initParamVals?.[paramIdx] === "number"
+                ? "close"
+                : initParamVals?.[paramIdx]
+            }
+            onChangeConfirmed={modifyNumericParam?.(dataGraph.id, paramIdx)}
+            options={
+              defParam?.type === "applyOn" && srcData?.type === "indicator"
+                ? new Array(srcData?.indicator?.graphTypes?.length).fill(0).map((v, idx) => idx.toString())
+                : defParam?.type === "applyOn" && srcData?.type === "chart"
+                ? ["open", "high", "low", "close"]
+                : defParam?.type === "select"
+                ? defParam?.options
+                : []
+            }
+          />
+        ) : null;
+      })}
     </CTreeItem>
   );
 };
+export const ChartMenuIndiGraphTreeItem = React.memo(ChartMenuIndiGraphTreeItemComponent);

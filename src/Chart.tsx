@@ -13,28 +13,53 @@ import { ChartLabels } from "./Dom/ChartLabels";
 import { DrawTool } from "./Tools/DrawTool";
 import * as T from "./Types";
 import { css, Global } from "@emotion/react";
+import dequal from "lodash/isEqual";
+import { mergeRefs } from "./utils/React";
+import { Box, Portal } from "@mui/material";
+import { CSnackBar } from "./Components/CSnackbar";
 
-export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
-  const { settings, ChartState, Dispatch, rtTicks = [], ContainerRef } = props.Controller;
-  const { disableTheme, appendElement } = settings;
+export const Chart = React.forwardRef<HTMLDivElement, T.ChartProps>((props, ref) => {
+  const { settings, ChartState, Dispatch, rtTicks = [], ContainerRef, events } = props.Controller;
+  const { disableTheme } = settings || {};
 
-  const Settings = React.useRef<T.ChartStateProps["settings"]>(settings);
+  const Settings = React.useRef<T.UseChartControllerProps["settings"]>(settings);
   const [ChartMenu2Open, setChartMenu2Open] = React.useState<CChartMenuStateType>({
     location: null,
     expandedSetting: [],
   });
 
+  React.useEffect(() => {
+    if (!ContainerRef) return;
+    mergeRefs([ContainerRef, ref]);
+  }, [ContainerRef, ref]);
+
   const handleRequestMenuOpen = React.useCallback(() => {
+    Dispatch({
+      task: "setPointerEventsIntern",
+      params: { disablePointerEvents: true },
+    });
     setChartMenu2Open((current) => ({ ...current, location: "menu" }));
-  }, []);
+  }, [Dispatch]);
 
   const handleRequestMenuClose = React.useCallback(() => {
+    Dispatch({
+      task: "setPointerEventsIntern",
+      params: { disablePointerEvents: false },
+    });
     setChartMenu2Open((current) => ({ ...current, location: null }));
-  }, []);
+  }, [Dispatch]);
 
-  const handleRequestMenuNavigation = React.useCallback((target) => {
-    setChartMenu2Open((current) => ({ ...current, location: target }));
-  }, []);
+  const handleRequestMenuNavigation = React.useCallback(
+    (target) => {
+      if (!target)
+        Dispatch({
+          task: "setPointerEventsIntern",
+          params: { disablePointerEvents: false },
+        });
+      setChartMenu2Open((current) => ({ ...current, location: target }));
+    },
+    [Dispatch]
+  );
 
   const handleToggleExpanded = React.useCallback((id: string) => {
     setChartMenu2Open((current) =>
@@ -50,23 +75,34 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
   const handleChartLabelClick = React.useCallback(
     (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, subchartIdx: number, graphIdx: number) => {
       if (isNullish(subchartIdx) || isNullish(graphIdx)) return;
+      Dispatch({
+        task: "setPointerEventsIntern",
+        params: { disablePointerEvents: true },
+      });
       setChartMenu2Open({
         location: "settings",
         expandedSetting: [`graph-sub-${subchartIdx}-y-0-graph-${graphIdx}`, `sub-${subchartIdx}`],
       });
     },
-    []
+    [Dispatch]
   );
 
-  const darkMode = ChartState.options.isDarkMode;
-  const mainGraph = ChartState?.subCharts?.[0]?.yaxis?.[0]?.graphs?.[0] as T.ChartGraphState;
+  const handleSnackbarClose = React.useCallback(() => {
+    // setIsError((current) => (current.length === 1 ? [] : current.splice(1)));
+    Dispatch({ task: "removeSnackbarMessage" } as T.ReducerAction<"removeSnackbarMessage">);
+  }, [Dispatch]);
+
+  const darkMode = ChartState.theme.isDarkMode;
+  const mainGraph = ChartState?.subcharts?.[0]?.yaxis?.[0]?.graphs?.[0] as T.ChartGraphState;
   const MainChart = mainGraph?.chartType === "candles" ? CCandleChart : CLineChart;
   const isContainerInit = ChartState.containerSize.init;
-  const { heightXAxis } = ChartState.options.xaxis;
+  const { heightXAxis } = ChartState.theme.xaxis;
   const containerWidth = ChartState.containerSize.width - 1;
   const containerHeight = ChartState.containerSize.height - 1;
+  const sizelessSubcharts = ChartState.subcharts.map((sub) => ({ yaxis: sub.yaxis }));
+  const SizelessSubcharts = React.useRef(sizelessSubcharts);
+  if (!dequal(SizelessSubcharts.current, sizelessSubcharts)) SizelessSubcharts.current = sizelessSubcharts;
 
-  // console.log("appendElement", appendElement);
   return (
     <React.Fragment>
       <Global
@@ -92,13 +128,16 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
         <div //responsive container
           ref={ContainerRef}
           className="ChartContainer"
-          style={{ background: ChartState.options.backgroundColor }}
+          style={{
+            background: ChartState.theme.backgroundColor,
+            touchAction: "none",
+          }}
         >
           {!mainGraph || !MainChart || !isContainerInit ? (
             <div
               style={{
                 height: "100%",
-                background: ChartState.options.backgroundColor,
+                background: ChartState.theme.backgroundColor,
               }}
             >
               <Backdrop sx={{ color: "primary.main" }} open={true} invisible>
@@ -116,7 +155,7 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                 className="ChartKonvaStage"
                 listening={false}
               >
-                {/*  basic 'static' layer - update only on containerResize, subchartResize and if style changes */}
+                {/*  basic 'static' layer - update only on containerResize, subchartResize and if theme changes */}
                 <Layer listening={false}>
                   <Rect
                     name="xaxis-rect"
@@ -125,11 +164,11 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                     y={containerHeight - heightXAxis + 0.5}
                     width={containerWidth}
                     height={heightXAxis}
-                    fill={ChartState.options.xaxis.fillColor}
-                    stroke={ChartState.options.borderColor}
+                    fill={ChartState.theme.xaxis.fillColor}
+                    stroke={ChartState.theme.borderColor}
                     strokeWidth={1}
                   />
-                  {ChartState.subCharts.map((subchart, subchartIdx) => (
+                  {ChartState.subcharts.map((subchart, subchartIdx) => (
                     <React.Fragment key={`subchart-border-${subchartIdx}`}>
                       <Rect
                         name={"subchart rect " + subchartIdx}
@@ -138,17 +177,17 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                         y={subchart.top + 0.5}
                         width={containerWidth}
                         height={subchart.bottom - subchart.top}
-                        stroke={ChartState.options.borderColor}
+                        stroke={ChartState.theme.borderColor}
                         strokeWidth={1}
                       />
                     </React.Fragment>
                   ))}
                 </Layer>
-                {/*  chart and axis layer - update when subCharts, data, containerSize, style, calc.xaxis, calc.subcharts, calc.yToPix, calc.pixToY changes*/}
+                {/*  chart and axis layer - update when subcharts, data, containerSize, theme, calc.xaxis, calc.subcharts, calc.yToPix, calc.pixToY changes*/}
                 <Layer listening={false}>
-                  {0 in ChartState.subCharts ? (
+                  {0 in ChartState.subcharts ? (
                     <MainChart
-                      subCharts={ChartState.subCharts}
+                      subcharts={ChartState.subcharts}
                       calcXaxis={ChartState.calc.xaxis}
                       calcSubcharts={ChartState.calc.subcharts}
                       yToPix={ChartState.calc.yToPix}
@@ -158,11 +197,9 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                       graphIdx={0}
                     />
                   ) : null}
-                  {ChartState.subCharts.map((subchart, subchartIdx) =>
-                    subchart.yaxis.map((singleYaxis, yaxisIdx) =>
+                  {ChartState.subcharts.map((subchart, subchartIdx) =>
+                    subchart.yaxis.map((singleYaxis) =>
                       singleYaxis.graphs.map((graph, graphIdx) => {
-                        // const a = ChartState.calc.subcharts[subchartIdx].yaxis[yaxisIdx].graphs[graphIdx]?.curTicks;
-                        // const b = !!a ? a.length : 0;
                         const dataGraph = ChartState.data.find((val) => val.id === graph.dataId);
                         if (
                           T.isIndicatorGraph(graph) &&
@@ -175,22 +212,23 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                             const indicatorType = dataGraph.indicator.graphTypes?.[indiLineIdx]?.type ?? "line";
                             const CanvasChart =
                               indicatorType === "line" ? CLineChart : indicatorType === "bars" ? CBarChart : null;
-                            // if (dataGraph.indicator.name === "MACD") console.log("MACD", !CanvasChart);
+
                             if (!CanvasChart) return null;
-                            const areaTresholdPropIdx = dataGraph.indicator.default?.graphProps?.findIndex(
-                              (val) => val.name === "areaTresholds"
-                            );
-                            const addLineAreaParams =
-                              indicatorType === "line" && !isNullish(areaTresholdPropIdx) && areaTresholdPropIdx !== -1
-                                ? {
-                                    areaTresholds: dataGraph.indicator.default?.graphProps?.[areaTresholdPropIdx].val,
-                                  }
-                                : {};
+                            // approach to implement areas -> to be reviewed, maybe separate component
+                            // const areaTresholdPropIdx = dataGraph.indicator.default?.graphProps?.findIndex(
+                            //   (val) => val.name === "areaTresholds"
+                            // );
+                            // const addLineAreaParams =
+                            //   indicatorType === "line" && !isNullish(areaTresholdPropIdx) && areaTresholdPropIdx !== -1
+                            //     ? {
+                            //         areaTresholds: dataGraph.indicator.default?.graphProps?.[areaTresholdPropIdx].val,
+                            //       }
+                            //     : {};
 
                             return (
                               <CanvasChart
                                 key={`${indicatorType}-chart-s${subchartIdx}-y0-g${graphIdx}-l${indiLineIdx}`}
-                                subCharts={ChartState.subCharts}
+                                subcharts={ChartState.subcharts}
                                 subchartIdx={subchartIdx}
                                 yaxisIdx={0}
                                 graphIdx={graphIdx}
@@ -199,7 +237,7 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                                 calcSubcharts={ChartState.calc.subcharts}
                                 yToPix={ChartState.calc.yToPix}
                                 pixToY={ChartState.calc.pixToY}
-                                {...(addLineAreaParams as any)} // not affecting memo? because areaTreshold's value doesn't change (acc. Object.is())?
+                                // {...addLineAreaParams}
                               />
                             );
                           });
@@ -211,23 +249,23 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                   <Xaxis
                     calcXaxis={ChartState.calc.xaxis}
                     containerSize={ChartState.containerSize}
-                    style={ChartState.options}
+                    theme={ChartState.theme}
                   />
                   <Yaxis
                     calcSubcharts={ChartState.calc.subcharts}
                     containerSize={ChartState.containerSize}
-                    style={ChartState.options}
-                    subcharts={ChartState.subCharts}
+                    theme={ChartState.theme}
+                    subcharts={ChartState.subcharts}
                   />
                 </Layer>
                 <Layer listening={false}>
                   <Marker
                     rtTicks={rtTicks}
-                    style={ChartState.options}
+                    theme={ChartState.theme}
                     containerSize={ChartState.containerSize}
                     xaxis={ChartState.calc.xaxis}
                   />
-                  {ChartState.subCharts.map((subchart, sIdx) =>
+                  {ChartState.subcharts.map((subchart, sIdx) =>
                     subchart.yaxis.map((yaxis, yIdx) =>
                       yaxis.graphs.map((graph, gIdx) => {
                         if (graph.type === "indicator") {
@@ -245,7 +283,7 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                             return (
                               <CanvasChart
                                 key={`rtBars-s${sIdx}-y${yIdx}-g${gIdx}-l${lIdx}`}
-                                subCharts={ChartState.subCharts}
+                                subcharts={ChartState.subcharts}
                                 subchartIdx={sIdx}
                                 yaxisIdx={yIdx}
                                 graphIdx={gIdx}
@@ -269,7 +307,7 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                           return (
                             <CanvasChart
                               key={`rtBars-s${sIdx}-y${yIdx}-g${gIdx}`}
-                              subCharts={ChartState.subCharts}
+                              subcharts={ChartState.subcharts}
                               subchartIdx={sIdx}
                               yaxisIdx={yIdx}
                               graphIdx={gIdx}
@@ -288,12 +326,12 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                 <Layer listening={false}>
                   {ChartState.calc.xaxis?.xToPix &&
                     !!ChartState.calc.yToPix &&
-                    ChartState.subCharts.map((subchart, subchartIdx) =>
-                      subchart.yaxis.map((yaxis, yaxisIdx) =>
+                    ChartState.subcharts.map((subchart, subchartIdx) =>
+                      subchart.yaxis.map((yaxis) =>
                         yaxis.tools.map((tool, toolIdx) => {
                           const toolModel = defaultTools.find((defTool) => defTool.type === tool.type);
                           const additionalProps: { [key: string]: any } = {};
-                          tool.params?.forEach((param: any) => {
+                          tool.params?.forEach((param) => {
                             additionalProps[param.name] = param.val;
                           });
                           const Tool = toolModel ? toolModel.component : null;
@@ -301,7 +339,7 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                             <Tool
                               key={`trendline-sub-0-y-0-tool-${toolIdx}`}
                               // tool={toolState}
-                              subcharts={ChartState.subCharts}
+                              subcharts={ChartState.subcharts}
                               // draw={ChartState.draw}
                               subchartIdx={subchartIdx}
                               // yaxisIdx={0}
@@ -320,57 +358,94 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
                       )
                     )}
                 </Layer>
-                {/*  crosshair and draw layer - update when subcharts, data, containerSize, pointer, draw, calcPointer, calcXaxis, style, */}
+                {/*  crosshair and draw layer - update when subcharts, data, containerSize, pointer, draw, calcPointer, calcXaxis, theme, */}
                 <Layer listening={false}>
-                  {!!ChartState.calc.pointer.isHovering &&
-                  !Settings.current.disablePointerEvents &&
-                  ChartState.options.crosshair.useCrosshair ? (
+                  {!!ChartState?.calc?.pointer?.isHovering &&
+                  !events?.disablePointerEvents &&
+                  !settings?.disableCrosshair &&
+                  ChartState.theme.crosshair.useCrosshair ? (
                     <Crosshair
-                      subcharts={ChartState.subCharts}
+                      subcharts={ChartState.subcharts}
                       data={ChartState.data}
                       containerSize={ChartState.containerSize}
                       calcPointer={ChartState.calc.pointer}
                       calcXaxis={ChartState.calc.xaxis}
-                      style={ChartState.options}
+                      theme={ChartState.theme}
                       pixToY={ChartState.calc.pixToY}
                       rtTicks={rtTicks}
                       calcSubcharts={ChartState.calc.subcharts}
                     />
                   ) : null}
                   <DrawTool
-                    subcharts={ChartState.subCharts}
+                    subcharts={ChartState.subcharts}
                     containerSize={ChartState.containerSize}
                     draw={ChartState.draw}
                     calc={ChartState.calc}
-                    drawStyle={ChartState.options.draw}
+                    drawTheme={ChartState.theme.draw}
                   />
                 </Layer>
               </Stage>
-              <ChartLabels
-                data={ChartState.data}
-                subcharts={ChartState.subCharts}
-                calcPointer={ChartState.calc.pointer}
-                calcSubcharts={ChartState.calc.subcharts}
-                onGraphLabelClick={handleChartLabelClick}
-              />
-              <ChartMenuButton
-                bottomY={ChartState.subCharts?.[ChartState.subCharts.length - 1]?.bottom ?? 0}
-                onOpenClick={handleRequestMenuOpen}
-              />
-              {appendElement}
-              <CChartMenu
-                ChartMenuState={ChartMenu2Open}
-                onClose={handleRequestMenuClose}
-                onNavigate={handleRequestMenuNavigation}
-                subCharts={ChartState.subCharts}
-                xaxis={ChartState.calc.xaxis}
-                style={ChartState.options}
-                fullscreen={ChartState.fullscreen}
-                Dispatch={Dispatch}
-                onSettingsExpand={handleToggleExpanded}
-                settings={Settings.current}
-                data={ChartState.data}
-              />
+              <Box
+                ref={props?.Controller?.PointerContainerRef}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  background: "transparent",
+                  position: "relative",
+                  top: 0,
+                  left: 0,
+                  touchAction: "none",
+                }}
+              ></Box>
+              {!settings?.disableLabels && (
+                <ChartLabels
+                  data={ChartState.data}
+                  subcharts={ChartState.subcharts}
+                  calcPointer={ChartState.calc.pointer}
+                  calcSubcharts={ChartState.calc.subcharts}
+                  onGraphLabelClick={handleChartLabelClick}
+                />
+              )}
+              {!settings?.disableMenu && (
+                <React.Fragment>
+                  <ChartMenuButton
+                    bottomY={ChartState.subcharts?.[ChartState.subcharts.length - 1]?.bottom ?? 0}
+                    onOpenClick={handleRequestMenuOpen}
+                  />
+                  {props.children}
+                  <CChartMenu
+                    ChartMenuState={ChartMenu2Open}
+                    onClose={handleRequestMenuClose}
+                    onNavigate={handleRequestMenuNavigation}
+                    subcharts={SizelessSubcharts.current as any}
+                    xaxis={ChartState.calc.xaxis}
+                    theme={ChartState.theme}
+                    fullscreen={ChartState.fullscreen}
+                    Dispatch={Dispatch}
+                    onSettingsExpand={handleToggleExpanded}
+                    settings={Settings.current}
+                    data={ChartState.data}
+                    events={events}
+                  />
+                </React.Fragment>
+              )}
+              {ChartState.menu.snackbars.length > 0 ? (
+                <Portal key={`snackbar-portal`}>
+                  {ChartState.menu.snackbars.map((msg, msgIdx) => {
+                    return (
+                      <CSnackBar
+                        key={`msg-${msgIdx}`}
+                        autoHideDuration={8000}
+                        type={msg.type ?? "error"}
+                        open={ChartState.menu.snackbars.length > 0}
+                        onClose={handleSnackbarClose}
+                        content={msg.text}
+                        msgIdx={msgIdx}
+                      />
+                    );
+                  })}
+                </Portal>
+              ) : null}
             </React.Fragment>
           )}
         </div>
@@ -378,4 +453,4 @@ export const CChart = React.forwardRef((props: T.CChartProps, ref: any) => {
     </React.Fragment>
   );
 });
-CChart.displayName = "CChart";
+Chart.displayName = "Chart";

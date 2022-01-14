@@ -34,12 +34,12 @@ export const getDateString = (date: Date, period: T.PeriodName): string => {
     default:
       return "";
   }
-}; 
+};
 
 export const getUnitOfDate = (date: Date, period: T.PeriodName): number => {
   switch (period) {
     case "minutes":
-      return getMinutes(date); 
+      return getMinutes(date);
     case "hours":
       return getHours(date);
     case "days":
@@ -51,7 +51,7 @@ export const getUnitOfDate = (date: Date, period: T.PeriodName): number => {
     case "years":
       return getYear(date);
     default:
-      return 0; 
+      return 0;
   }
 };
 export const getDateUnits = (date: Date): T.NumericDate => ({

@@ -4,14 +4,14 @@ import * as T from "../Types";
 import { CText } from "./CText";
 
 export type YaxisProps = {
-  subcharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   calcSubcharts: T.ChartState["calc"]["subcharts"];
-  style: T.ChartState["options"];
+  theme: T.ChartState["theme"];
   containerSize: T.ChartState["containerSize"];
 };
 export const YaxisComponent = (props: YaxisProps) => {
-  const { subcharts, calcSubcharts, style, containerSize } = props;
-  const { widthTickmarkLines } = style.yaxis;
+  const { subcharts, calcSubcharts, theme, containerSize } = props;
+  const { widthTickmarkLines } = theme.yaxis;
 
   // console.log("Yaxis renders")
   return (
@@ -26,20 +26,20 @@ export const YaxisComponent = (props: YaxisProps) => {
                 <Line
                   name={`y-tickmark-${yaxisTickIdx}`}
                   listening={false}
-                  x={containerSize.width - 1 + 0.5 - style.yaxis.widthTickmarkLines} //- widthYAxis
+                  x={containerSize.width - 1 + 0.5 - theme.yaxis.widthTickmarkLines} //- widthYAxis
                   y={yaxisTick.pixY + 0.5}
                   points={[0, 0, widthTickmarkLines, 0]}
-                  stroke={style.yaxis.strokeColor}
+                  stroke={theme.yaxis.strokeColor}
                   strokeWidth={1}
                 />
-                {style.grid.useGridY ? (
+                {theme.grid.useGridY ? (
                   <Line
                     name={`y-gridline-${yaxisTickIdx}`}
                     listening={false}
                     x={0 + 0.5}
                     y={yaxisTick.pixY + 0.5}
                     points={[0, 0, containerSize.width - 1 + 0.5, 0]}
-                    stroke={style.grid.strokeColor}
+                    stroke={theme.grid.strokeColor}
                     strokeWidth={1}
                   />
                 ) : null}
@@ -47,10 +47,10 @@ export const YaxisComponent = (props: YaxisProps) => {
                   text={yaxisTick.label}
                   halign="right"
                   valign="middle"
-                  fontColor={style.yaxis.fontColor}
-                  fontName={style.yaxis.fontName}
-                  fontSize={style.yaxis.fontSize}
-                  x={containerSize.width - 1 - style.yaxis.widthTickmarkLines + 0.5}
+                  fontColor={theme.yaxis.fontColor}
+                  fontName={theme.yaxis.fontName}
+                  fontSize={theme.yaxis.fontSize}
+                  x={containerSize.width - 1 - theme.yaxis.widthTickmarkLines + 0.5}
                   y={yaxisTick.pixY}
                 />
               </React.Fragment>

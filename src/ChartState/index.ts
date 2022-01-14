@@ -35,4 +35,4 @@ export {
   getMaxDataSeriesDecimals,
 } from "./utils/Utils";
 
-export { useChartState } from "./useChartState";
+export { useChartController } from "./useChartController";

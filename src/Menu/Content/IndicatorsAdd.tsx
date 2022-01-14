@@ -5,14 +5,8 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import useTheme from "@mui/material/styles/useTheme";
 import { Icon } from "@mdi/react";
-import {
-  mdiDiameterVariant,
-  mdiChartBellCurve,
-  mdiArrowExpandVertical,
-  mdiPoll,
-  mdiSortAlphabeticalAscending,
-  mdiFilter,
-} from "@mdi/js";
+import { mdiDiameterVariant, mdiChartBellCurve, mdiArrowExpandVertical } from "@mdi/js";
+import { mdiPoll, mdiSortAlphabeticalAscending, mdiFilter } from "@mdi/js";
 import { CTreeItem } from "../../Components/CTreeItem";
 import { CTreeView } from "../../Components/CTreeView";
 import { IndicatorsSubMenu, IndicatorCategoryType } from "./IndicatorsSubMenu";
@@ -29,59 +23,26 @@ const categorys: { name: IndicatorCategoryType; icon: string }[] = [
 ];
 
 export const IndicatorsAdd = (props: {
-  subCharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   onNavigate: (target: CChartMenuStateType["location"]) => void;
   location: CChartMenuStateType["location"];
-  Dispatch: T.ChartStateHook["Dispatch"];
-  settings?: T.ChartStateProps["settings"];
+  Dispatch: T.ChartController["Dispatch"];
+  settings?: T.UseChartControllerProps["settings"];
   data: T.ChartState["data"];
+  fullscreen: boolean;
 }) => {
-  // const { subCharts, indicators, addIndicator, disableGrouping, data, Dispatch } = props;
-  const { subCharts, onNavigate, location, Dispatch, settings, data } = props;
-
+  const { subcharts, onNavigate, location, Dispatch, settings, data, fullscreen } = props;
   const [DisableGrouping, setDisableGrouping] = React.useState(false);
   const [SelectedGraph, setSelectedGraph] = React.useState(0);
-
-  const mainGraph = subCharts?.[0].yaxis[0].graphs[0];
   const amtIndicators = data.filter((val) => val.type === "indicator").length;
-  const mainGraphData = data.find((val) => val.id === mainGraph.dataId);
-  const mainGraphDataSeries = mainGraphData?.data ?? [];
-  const mainGraphName = mainGraphData?.name ?? "";
-  const mainGraphId = mainGraphData?.id;
 
   const theme = useTheme();
   const indicators = React.useMemo(
-    () =>
-      settings?.additionalIndicators ? [...defaultIndicators, ...settings.additionalIndicators] : defaultIndicators,
-    [settings?.additionalIndicators]
+    () => (settings?.indicators ? settings.indicators : defaultIndicators),
+    [settings?.indicators]
   );
-  const addIndicator = (indicator: T.IndicatorModel) => (e: React.MouseEvent<HTMLLIElement>) => {
-    if (indicator.default.newSubchart) {
-      Dispatch({
-        task: "addSubchart",
-        params: {
-          chartSeries: mainGraphDataSeries,
-          chartName: mainGraphName,
-          id: uniqid(),
-          indicator,
-          indSrcId: mainGraphId,
-        },
-      });
-    } else {
-      Dispatch({
-        task: "addGraph",
-        params: {
-          chartSeries: mainGraphDataSeries,
-          chartName: mainGraphName,
-          id: uniqid(),
-          indicator,
-          subchartIdx: 0,
-          indSrcId: mainGraphId,
-        },
-      });
-    }
-  };
-  const srcGraphs = subCharts
+
+  const srcGraphs = subcharts
     .map((subchart, subchartIdx) =>
       subchart.yaxis
         .map((yaxi, yaxisIdx) =>
@@ -136,6 +97,7 @@ export const IndicatorsAdd = (props: {
                   SelectDisplayProps: {
                     style: { padding: 8, paddingRight: 32, paddingLeft: 16 },
                   },
+                  MenuProps: { disablePortal: fullscreen },
                 }}
                 variant="outlined"
                 InputProps={{ sx: { borderRadius: "18px" } }}
@@ -203,20 +165,18 @@ export const IndicatorsAdd = (props: {
                           nodeId={((catIdx + 1) * 100 + (indiIdx + 1)).toString()}
                           labelText={indi.name}
                           typographyVariant="body1"
-                          //   labelIcon={<Icon path={mdiFileChartOutline} size={1} color={theme.palette.type === "light" ? "#333" : "#fff"} />}
                           onClick={() => {
                             const dataGraph = data.find((val) => val.id === srcGraphs[SelectedGraph]?.dataId);
                             if (!dataGraph) return;
                             const dataSeries = dataGraph.data ?? [];
-                            const name = dataGraph.name ?? "Graph No." + srcGraphs?.[SelectedGraph].graphIdx;
+                            const graphName = dataGraph.name ?? "Graph No." + srcGraphs?.[SelectedGraph].graphIdx;
                             if (indi?.default.newSubchart) {
                               Dispatch({
                                 task: "addSubchart",
                                 params: {
                                   dataSeries,
-                                  name,
+                                  graphName,
                                   indicator: indi,
-                                  // indSrcId: mainGraph.dataId,
                                   indSrcId: dataGraph.id,
                                   id: uniqid(),
                                 },
@@ -226,7 +186,7 @@ export const IndicatorsAdd = (props: {
                                 task: "addGraph",
                                 params: {
                                   dataSeries,
-                                  name,
+                                  graphName,
                                   id: uniqid(),
                                   indicator: indi,
                                   subchartIdx: srcGraphs?.[SelectedGraph].subchartIdx,
@@ -250,7 +210,37 @@ export const IndicatorsAdd = (props: {
                   nodeId={(indiIdx + 1).toString()}
                   labelText={indi.name}
                   typographyVariant="body1"
-                  onClick={addIndicator(indi)}
+                  onClick={() => {
+                    const dataGraph = data.find((val) => val.id === srcGraphs[SelectedGraph]?.dataId);
+                    if (!dataGraph) return;
+                    const dataSeries = dataGraph.data ?? [];
+                    const graphName = dataGraph.name ?? "Graph No." + srcGraphs?.[SelectedGraph].graphIdx;
+                    if (indi?.default.newSubchart) {
+                      Dispatch({
+                        task: "addSubchart",
+                        params: {
+                          dataSeries,
+                          graphName,
+                          indicator: indi,
+                          indSrcId: dataGraph.id,
+                          id: uniqid(),
+                        },
+                      });
+                    } else {
+                      Dispatch({
+                        task: "addGraph",
+                        params: {
+                          dataSeries,
+                          graphName,
+                          id: uniqid(),
+                          indicator: indi,
+                          subchartIdx: srcGraphs?.[SelectedGraph].subchartIdx,
+                          indSrcId: dataGraph.id,
+                          indSrcLineIdx: srcGraphs?.[SelectedGraph].graphLineIdx,
+                        },
+                      });
+                    }
+                  }}
                 />
               ))}
       </CTreeView>

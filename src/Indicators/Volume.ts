@@ -1,16 +1,15 @@
 import * as T from "../Types";
 
-export const iVolume: T.IndicatorModel = {
+export const iVolume = () => Volume;
+export const Volume: T.IndicatorModel = {
   name: "Volume",
   category: "Volume",
   params: [],
   default: { params: [], newSubchart: true, decimals: 0 },
-  // type: "bars",
   graphTypes: [{ type: "bars" }],
-  // nSeries: 1,
   indicatorFnType: "chartSeries",
-  indicatorFn: (params: { chartData: T.ChartDataset[] }) => {
-    const { chartData: srcChartData } = params;
+  indicatorFn: (params: { dataseries: T.ChartDataset[] }) => {
+    const { dataseries: srcChartData } = params;
     const indicatorData: T.IndicatorDataset[] = [];
     for (let i = 0; i < srcChartData.length; i++) {
       const dataset = srcChartData[i];

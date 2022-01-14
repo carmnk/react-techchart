@@ -7,14 +7,13 @@ import { getDateString } from "../ChartState/utils/DateTime";
 import { snapPixYToDataset } from "../ChartState/utils/Utils";
 
 export type CrosshairProps = {
-  subcharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   data: T.ChartState["data"];
   containerSize: T.ChartState["containerSize"];
-  // pointer: T.ChartState["pointer"];
   calcSubcharts: T.ChartState["calc"]["subcharts"];
   calcPointer: T.ChartState["calc"]["pointer"];
   calcXaxis: T.ChartState["calc"]["xaxis"];
-  style: T.ChartState["options"];
+  theme: T.ChartState["theme"];
   disableSnapX?: boolean;
   disableSnapGraphs?: boolean;
   pixToY?: T.ChartState["calc"]["pixToY"];
@@ -26,11 +25,10 @@ export const CrosshairComponent = (props: CrosshairProps) => {
     disableSnapX,
     disableSnapGraphs,
     containerSize,
-    style,
+    theme,
     subcharts,
     data,
     calcSubcharts,
-    // pointer,
     calcPointer,
     calcXaxis,
     pixToY,
@@ -39,10 +37,9 @@ export const CrosshairComponent = (props: CrosshairProps) => {
 
   const containerWidth = containerSize.width - 1;
   const containerHeight = containerSize.height - 1;
-  const { widthYAxis } = style.yaxis; // 80 default but yaxis currently does not have width -> should be in settings
-  const { heightXAxis, heightTickMarkLines } = style.xaxis;
-  // const calcPointer = ChartState.calc.pointer;
-  const {  pixXSnap, xUnlimited, pixXUnlimSnap } = calcPointer.move;
+  const { widthYAxis } = theme.yaxis; // 80 default but yaxis currently does not have width -> should be in settings
+  const { heightXAxis, heightTickMarkLines } = theme.xaxis;
+  const { pixXSnap, xUnlimited, pixXUnlimSnap } = calcPointer.move;
   const { xEnd, xLast } = calcXaxis;
 
   const pointedSubchartIdx = calcPointer.move.subchartIdx;
@@ -50,9 +47,11 @@ export const CrosshairComponent = (props: CrosshairProps) => {
   const pointedYaxisIdx = snapDataset ? snapDataset.yaxisIdx : null;
   const pointedGraphIdx = snapDataset ? snapDataset.graphIdx : null;
   const pointedGraph =
-    !isNullish(pointedYaxisIdx) && !isNullish(pointedGraphIdx) && !isNullish(pointedSubchartIdx)
-      ? subcharts[pointedSubchartIdx].yaxis?.[pointedYaxisIdx]?.graphs?.[pointedGraphIdx]
-      : null;
+    (!isNullish(pointedYaxisIdx) &&
+      !isNullish(pointedGraphIdx) &&
+      !isNullish(pointedSubchartIdx) &&
+      subcharts?.[pointedSubchartIdx]?.yaxis?.[pointedYaxisIdx]?.graphs?.[pointedGraphIdx]) ||
+    null;
   const graphData = data.find((val) => val.id === pointedGraph?.dataId);
   const pixX =
     (!disableSnapX || (snapDataset?.ySnap && !disableSnapGraphs)) && pixXSnap ? pixXSnap : pixXUnlimSnap ?? 0;
@@ -68,31 +67,9 @@ export const CrosshairComponent = (props: CrosshairProps) => {
         const date = rtTicks?.[0]?.data?.[xUnlimited - xEnd]?.date;
         const chartPeriod = mainGraphData.meta.chartPeriod;
         if (!date || !chartPeriod) return "";
-        // const periodToDraw = getTickPeriod(date, data?.[0]?.type === "chart" ? data?.[0]?.dateStat : null, mainGraphMeta.chartPeriod, {
-        //     ...optChartPeriod,
-        // });
-        //          const xDateString = getDateString(
-        //     mainData.data[x].date,
-        //     !!periodToDraw ? periodToDraw : mainGraphMeta.chartPeriod.name
-
         return getDateString(date, chartPeriod.name);
       })()
     : "";
-
-  // const ysnapTest =
-  //   xUnlimited > xLast &&
-  //   xUnlimited <= xLast + (rtTicks?.[0]?.data.length ?? 1) - 1 &&
-  //   !isNullish(pointedSubchartIdx) &&
-  //   !isNullish(calcPointer.move.pixY)
-  //     ? snapPixYToDataset(
-  //         calcPointer.move.pixY,
-  //         rtTick?.data?.[xUnlimited - xEnd],
-  //         subcharts,
-  //         pointedSubchartIdx,
-  //         0,
-  //         calcSubcharts
-  //       )
-  //     : null;
   const ysnapTest =
     xUnlimited > xLast &&
     xUnlimited <= xLast + (rtTicks?.[0]?.data.length ?? 1) - 1 &&
@@ -153,7 +130,7 @@ export const CrosshairComponent = (props: CrosshairProps) => {
         x={0}
         y={0}
         points={[pixX + 0.5, 0.5, pixX + 0.5, containerHeight - heightXAxis + heightTickMarkLines + 0.5]}
-        stroke={style.crosshair.strokeColor}
+        stroke={theme.crosshair.strokeColor}
         strokeWidth={1}
       />
       {calcPointer.move.pixY <= subcharts[subcharts.length - 1].bottom ? (
@@ -164,7 +141,7 @@ export const CrosshairComponent = (props: CrosshairProps) => {
             x={0}
             y={0}
             points={[0.5, pixY + 0.5, containerWidth - widthYAxis + 0.5, pixY + 0.5]}
-            stroke={style.crosshair.strokeColor}
+            stroke={theme.crosshair.strokeColor}
             strokeWidth={1}
           />
           <Line // yaxis marker polygon
@@ -185,8 +162,8 @@ export const CrosshairComponent = (props: CrosshairProps) => {
               containerWidth - widthYAxis + 10,
               pixY - 10,
             ]}
-            stroke={style.crosshair.yMarkerStrokeColor}
-            fill={style.crosshair.yMarkerBackgroundColor}
+            stroke={theme.crosshair.yMarkerStrokeColor}
+            fill={theme.crosshair.yMarkerBackgroundColor}
             strokeWidth={1}
             closed
           />
@@ -196,10 +173,10 @@ export const CrosshairComponent = (props: CrosshairProps) => {
             text={y ?? ""}
             halign="left"
             valign="middle"
-            fontColor={style.crosshair.yMarkerTextColor}
-            fontSize={style.crosshair.yMarkerFontSize}
-            fontName={style.crosshair.yMarkerFontName}
-            x={containerWidth - widthYAxis + style.yaxis.widthTickmarkLines + 5}
+            fontColor={theme.crosshair.yMarkerTextColor}
+            fontSize={theme.crosshair.yMarkerFontSize}
+            fontName={theme.crosshair.yMarkerFontName}
+            x={containerWidth - widthYAxis + theme.yaxis.widthTickmarkLines + 5}
             y={pixY as number}
           />
         </React.Fragment>
@@ -213,16 +190,16 @@ export const CrosshairComponent = (props: CrosshairProps) => {
             y={containerHeight - heightXAxis + heightTickMarkLines + 0.5}
             width={50}
             height={25}
-            fill={style.crosshair.xMarkerBackgroundColor}
-            stroke={style.crosshair.xMarkerStrokeColor}
+            fill={theme.crosshair.xMarkerBackgroundColor}
+            stroke={theme.crosshair.xMarkerStrokeColor}
             strokeWidth={1}
           />
           <CText // xaxis marker text
             name="x-marker text"
             listening={false}
-            fontSize={style.crosshair.xMarkerFontSize}
-            fontName={style.crosshair.xMarkerFontName}
-            fontColor={style.crosshair.xMarkerTextColor}
+            fontSize={theme.crosshair.xMarkerFontSize}
+            fontName={theme.crosshair.xMarkerFontName}
+            fontColor={theme.crosshair.xMarkerTextColor}
             halign="center"
             valign="top"
             text={xDateString}

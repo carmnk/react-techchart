@@ -25,30 +25,28 @@ const tools: {
   { name: "vertical", type: "vline", category: "Lines" },
 ];
 
-const onToolLabelClick = (Dispatch: T.ChartStateHook["Dispatch"], type: NonNullable<T.ChartState["draw"]["type"]>) => {
-  const subchartIdx = 0;
-  const action: T.ReducerAction<"draw"> = {
-    task: "draw",
-    params: { type, subchartIdx },
+const onToolLabelClick = (Dispatch: T.ChartController["Dispatch"], type: NonNullable<T.ChartState["draw"]["type"]>) => {
+  // const subchartIdx = 0;
+  const action: T.ReducerAction<"startDrawing"> = {
+    task: "startDrawing",
+    params: { type },
   };
-
   Dispatch(action);
 };
 
 export const ToolsAdd = (props: {
-  subCharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   onNavigate: (target: CChartMenuStateType["location"]) => void;
-  Dispatch: T.ChartStateHook["Dispatch"];
+  Dispatch: T.ChartController["Dispatch"];
 }) => {
-  const { Dispatch, onNavigate, subCharts } = props;
+  const { Dispatch, onNavigate, subcharts } = props;
   const [DisableGrouping, setDisableGrouping] = React.useState(false);
   const theme = useTheme();
 
-  // console.log(tools);
   return (
     <React.Fragment>
       <ToolsSubMenu
-        subCharts={subCharts}
+        subcharts={subcharts}
         location="tools"
         onNavigate={onNavigate}
         theme={theme}
@@ -95,7 +93,6 @@ export const ToolsAdd = (props: {
                   .filter((tool) => tool.category === cat.name)
                   .sort((a, b) => (a.name > b.name ? 1 : -1))
                   .map((tool, toolIdx) => {
-                    // console.log(tool);
                     return (
                       <CTreeItem
                         key={`cat-${catIdx}-tool-${toolIdx}`}

@@ -1,19 +1,16 @@
 import React from "react";
 import List from "@mui/material/List";
 import useTheme from "@mui/material/styles/useTheme";
-import {
-  mdiChartLine,
-  mdiChartBellCurve,
-  mdiPencilRuler,
-  mdiTune,
-} from "@mdi/js";
-import { ChartMenuListItem } from "../Subelements/ChartMenuListItem";
+import { mdiChartLine, mdiChartBellCurve, mdiPencilRuler, mdiTune } from "@mdi/js";
+import { ChartMenuListItem } from "../Subelements/CMListItem";
 import { CChartMenuStateType } from "../ChartMenu";
+import * as T from "../../Types";
 
 export const Home = (props: {
   onNavigate: (target: CChartMenuStateType["location"]) => void;
+  events: T.UseChartControllerProps["events"] | undefined;
 }) => {
-  const { onNavigate } = props;
+  const { onNavigate, events } = props;
   const theme = useTheme();
 
   const handleNavChart = React.useCallback(() => {

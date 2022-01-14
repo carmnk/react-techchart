@@ -1,8 +1,8 @@
 import React from "react";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Home } from "./Content/Home";
-import { CMSettings } from "./Content/CMSettings";
-import { CMChart } from "./Content/CMChart";
+import { CMSettings } from "./Content/Settings";
+import { CMChart } from "./Content/Chart";
 import { IndicatorsAdd } from "./Content/IndicatorsAdd";
 import * as T from "../Types";
 import { ChartMenuLayout } from "./ChartMenuLayout";
@@ -18,44 +18,55 @@ export type CChartMenuStateType = {
 export const CChartMenuComponent = (props: {
   ChartMenuState: CChartMenuStateType;
   onClose: () => void;
-  subCharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   xaxis: T.ChartState["calc"]["xaxis"];
   fullscreen: T.ChartState["fullscreen"];
-  style: T.ChartState["options"];
+  theme: T.ChartState["theme"];
   onNavigate: (target: CChartMenuStateType["location"]) => void;
-  Dispatch: T.ChartStateHook["Dispatch"];
+  Dispatch: T.ChartController["Dispatch"];
   onSettingsExpand: (id: string) => void;
-  settings: T.ChartStateProps["settings"];
+  settings: T.UseChartControllerProps["settings"];
   data: T.ChartState["data"];
+  events: T.UseChartControllerProps["events"] | undefined;
 }) => {
   const {
     onClose,
     ChartMenuState,
-    subCharts,
-    style,
+    subcharts,
+    theme,
     onNavigate,
     Dispatch,
     onSettingsExpand,
     fullscreen,
     settings,
     data,
+    events,
   } = props;
 
   const isDesktop = useMediaQuery("(min-width:600px)");
   const contentPages = [
-    { location: "menu", headerText: "Chart Menu", component: () => <Home onNavigate={onNavigate} /> },
-    { location: "chart", headerText: "Chart", component: () => <CMChart Dispatch={Dispatch} /> },
+    {
+      location: "menu",
+      headerText: "Chart Menu",
+      component: () => <Home onNavigate={onNavigate} events={events} />,
+    },
+    {
+      location: "chart",
+      headerText: "Chart",
+      component: () => <CMChart Dispatch={Dispatch} events={events} settings={settings} />,
+    },
     {
       location: "indicators",
       headerText: "Add Indicator",
       component: () => (
         <IndicatorsAdd
-          subCharts={subCharts}
+          subcharts={subcharts}
           onNavigate={onNavigate}
           location={ChartMenuState.location}
           Dispatch={Dispatch}
           settings={settings}
           data={data}
+          fullscreen={fullscreen}
         />
       ),
     },
@@ -64,47 +75,52 @@ export const CChartMenuComponent = (props: {
       headerText: "Edit Indicator",
       component: () => (
         <IndicatorsEdit
-          subCharts={subCharts}
+          subcharts={subcharts}
           onNavigate={onNavigate}
           location={ChartMenuState.location}
           Dispatch={Dispatch}
           settings={settings}
           data={data}
+          fullscreen={fullscreen}
         />
       ),
     },
     {
       location: "tools",
       headerText: "Add Tool",
-      component: () => <ToolsAdd subCharts={subCharts} Dispatch={Dispatch} onNavigate={onNavigate} />,
+      component: () => <ToolsAdd subcharts={subcharts} Dispatch={Dispatch} onNavigate={onNavigate} />,
     },
     {
       location: "editTool",
       headerText: "Edit Tool",
-      component: () => <ToolsEdit subCharts={subCharts} Dispatch={Dispatch} onNavigate={onNavigate} />,
+      component: () => (
+        <ToolsEdit subcharts={subcharts} Dispatch={Dispatch} onNavigate={onNavigate} fullscreen={fullscreen} />
+      ),
     },
     {
       location: "settings",
       headerText: "Settings",
       component: () => (
         <CMSettings
+          key="cm-settings"
           ChartMenuState={ChartMenuState}
-          subCharts={subCharts}
-          style={style}
+          subcharts={subcharts}
+          theme={theme}
           Dispatch={Dispatch}
           onNavigate={onNavigate}
           onSettingsExpand={onSettingsExpand}
           data={data}
+          fullscreen={fullscreen}
         />
       ),
     },
   ];
-
   const contentPage = contentPages.find((page) => page.location === ChartMenuState.location);
   if (!ChartMenuState.location || !contentPage) return null;
   const ContentPageComponent = contentPage.component;
   const headerText = contentPage.headerText;
-  console.log("Chartmenu renders");
+
+  // console.log("Chartmenu renders");
   return (
     <ChartMenuLayout
       headerText={headerText}
@@ -116,6 +132,7 @@ export const CChartMenuComponent = (props: {
       fullscreen={fullscreen}
       onClose={onClose}
       content={<ContentPageComponent />}
+      events={events}
     />
   );
 };

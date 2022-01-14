@@ -8,17 +8,17 @@ export type MarkerProps = {
   rtTicks?: T.RealtimeDataTick[];
   xaxis: T.ChartState["calc"]["xaxis"];
   containerSize: T.ChartState["containerSize"];
-  style: T.ChartState["options"];
+  theme: T.ChartState["theme"];
   indSeriesIdx?: number;
 };
 
 const MarkerComponent = (props: MarkerProps) => {
-  const { rtTicks, containerSize, style, indSeriesIdx, xaxis } = props;
+  const { rtTicks, containerSize, theme, indSeriesIdx, xaxis } = props;
   const lastRtTick = rtTicks?.[0]?.ticks?.[rtTicks?.[0]?.ticks?.length - 1];
   const lastRtData = rtTicks?.[0]?.data?.[rtTicks?.[0]?.data?.length - 1];
   if (!rtTicks || !lastRtTick || !lastRtData) return null;
   const { width: containerWidth } = containerSize;
-  const widthYAxis = style.yaxis.widthYAxis;
+  const widthYAxis = theme.yaxis.widthYAxis;
 
   const pixYDataset = lastRtTick?.pixY;
   const pixX = lastRtTick.pixX;
@@ -69,8 +69,8 @@ const MarkerComponent = (props: MarkerProps) => {
           Math.round(containerWidth - widthYAxis + 10) + 0.5,
           Math.round(pixY - 10) + 0.5,
         ]}
-        stroke={style.crosshair.yMarkerStrokeColor}
-        fill={style.crosshair.yMarkerBackgroundColor}
+        stroke={theme.crosshair.yMarkerStrokeColor}
+        fill={theme.crosshair.yMarkerBackgroundColor}
         strokeWidth={1}
         closed
       />
@@ -80,11 +80,11 @@ const MarkerComponent = (props: MarkerProps) => {
         text={y.toString() ?? ""}
         halign="left"
         valign="middle"
-        fontColor={style.crosshair.yMarkerTextColor}
-        fontSize={style.crosshair.yMarkerFontSize}
-        fontName={style.crosshair.yMarkerFontName}
-        x={Math.round(containerWidth - widthYAxis + style.yaxis.widthTickmarkLines + 5) +0.5}
-        y={Math.round(pixY)+0.5 }
+        fontColor={theme.crosshair.yMarkerTextColor}
+        fontSize={theme.crosshair.yMarkerFontSize}
+        fontName={theme.crosshair.yMarkerFontName}
+        x={Math.round(containerWidth - widthYAxis + theme.yaxis.widthTickmarkLines + 5) + 0.5}
+        y={Math.round(pixY) + 0.5}
       />
     </React.Fragment>
   );

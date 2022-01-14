@@ -11,8 +11,9 @@ export const CMColorPropTreeItem = (props: {
   text: string;
   onColorSelected: (color: string) => void;
   iconBorder?: string;
+  fullscreen: boolean;
 }) => {
-  const { nodeId, onColorSelected, color, iconPath, text } = props;
+  const { nodeId, onColorSelected, color, iconPath, text, fullscreen } = props;
   const theme = useTheme();
   return (
     <CTreeItem
@@ -32,6 +33,7 @@ export const CMColorPropTreeItem = (props: {
         <Colorpicker
           color={typeof color === "string" ? color : color[0]}
           onColorSelected={onColorSelected}
+          fullscreen={fullscreen}
         />
       }
     />

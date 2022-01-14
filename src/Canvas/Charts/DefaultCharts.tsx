@@ -6,16 +6,9 @@ import { CLineChart } from "./CLineChart";
 export type CanvasChart = {
   name: string;
   type: string;
-  //   nPoints: number;
-  //   category: string;
-  //   params: { name: string; val: any; vals: any[]; type: "select" | "number" }[];
-  //   default?: {
-  //     params?: { icon: string }[];
-  //     // style?: any;
-  //   };
+
   component: (props: {
-    subCharts: T.ChartState["subCharts"];
-    // containerSize: T.ChartState["containerSize"];
+    subcharts: T.ChartState["subcharts"];
     calcXaxis: T.ChartState["calc"]["xaxis"];
     calcSubcharts: T.ChartState["calc"]["subcharts"];
     yToPix?: (y: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;

@@ -1,14 +1,11 @@
 import React from "react";
 import { Line } from "react-konva";
 import * as T from "../../Types";
-// import { useReactiveInfo2 } from "../../utils/React";
 
 export type CBarChartProps = {
-  subCharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   calcXaxis: T.ChartState["calc"]["xaxis"];
   calcSubcharts: T.ChartState["calc"]["subcharts"];
-  // yToPix?: (y: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;
-  // pixToY?: (pixY: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;
   subchartIdx: number;
   yaxisIdx: number;
   graphIdx: number;
@@ -16,21 +13,17 @@ export type CBarChartProps = {
   rtTicks?: T.PixDataset[];
 };
 export const CBarChartComponent = (props: CBarChartProps) => {
-  const { subCharts, subchartIdx, yaxisIdx, graphIdx, calcXaxis, calcSubcharts, indSeriesIdx, rtTicks } = props;
-  // const { xaxis } = calc;
-  const graph = subCharts[subchartIdx].yaxis[yaxisIdx].graphs[graphIdx];
+  const { subcharts, subchartIdx, yaxisIdx, graphIdx, calcXaxis, calcSubcharts, indSeriesIdx, rtTicks } = props;
+  const graph = subcharts[subchartIdx].yaxis[yaxisIdx].graphs[graphIdx];
   const calcYaxis = calcSubcharts?.[subchartIdx]?.yaxis?.[yaxisIdx];
   const calcGraph = calcYaxis?.graphs?.[graphIdx];
   const curTicks = React.useMemo(
     () => (rtTicks ? rtTicks : calcGraph?.curTicks ? calcGraph.curTicks : []),
     [calcGraph?.curTicks, rtTicks]
   );
-
-  // console.log(curTicks, curTicks.length);
-  // const info = useReactiveInfo2([subCharts, calcXaxis, calcSubcharts, subchartIdx, yaxisIdx, graphIdx]);
   if (!curTicks || curTicks.length === 0) return null;
 
-  // console.log("barchart renders", info);
+  // console.log("barchart renders");
   return (
     <React.Fragment>
       {curTicks
@@ -57,4 +50,4 @@ export const CBarChartComponent = (props: CBarChartProps) => {
   );
 };
 
-export const CBarChart =  React.memo(CBarChartComponent);
+export const CBarChart = React.memo(CBarChartComponent);

@@ -8,28 +8,8 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import React from "react";
-import { colorNameToRGB, hexToRgb } from "../utils/Color";
+import { hexToRgb, colorNameToRGB } from "../utils/Color";
 
-// const colors = [
-//   "#000", //black to white
-//   "#666",
-//   "#bbb",
-//   "#fff",
-//   "#9013fe", //violets
-//   "#bd10e0",
-//   "#3f51b5", // blues
-//   "#0693E3",
-//   "#8ED1FC",
-//   "#008080", // greens
-//   "#00D084",
-//   "#7BDCB5",
-//   "#b80000", // reds
-//   "#f50057",
-//   "#f78da7",
-//   "#795548", // brown to yellow
-//   "#FF6900",
-//   "#FCB900",
-// ];
 const rgbaColor = [
   "0, 0, 0", //black to whites
   "102, 102, 102",
@@ -64,7 +44,6 @@ export const ColorRect = (props: {
       sx={{
         minWidth: width,
         minHeight: height,
-        // height,
         boxSizing: "border-box",
         background: color,
         borderRadius: 1,
@@ -78,20 +57,20 @@ export const ColorRect = (props: {
 export type ColorpickerProps = {
   color: React.CSSProperties["background"];
   onColorSelected: (color: string) => void;
+  fullscreen: boolean;
 };
 export const Colorpicker = (props: ColorpickerProps) => {
-  const { color, onColorSelected } = props;
+  const { color: color1, onColorSelected, fullscreen } = props;
   const [Open, setOpen] = React.useState(false);
-  const [ColorHover, setColorHover] = React.useState<string | null>(null);
+  const [TempColor, setTempColor] = React.useState(color1);
 
   const InputRef = React.useRef<HTMLButtonElement>(null);
 
-  const isHex = /((^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$))/i.test(color as string);
-  const hexToRgbRes =
-    !!isHex && typeof color === "string" ? hexToRgb(color) : null;
+  const isHex = /((^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$))/i.test(TempColor as string);
+  const hexToRgbRes = !!isHex && typeof TempColor === "string" ? hexToRgb(TempColor) : null;
   const isRgb =
-    typeof color === "string"
-      ? (color as string).match(
+    typeof TempColor === "string"
+      ? (TempColor as string).match(
           /^(rgb)(a?)[(]\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*(?:,\s*([\d.]+)\s*)?[)]$/
         )
       : null;
@@ -103,13 +82,11 @@ export const Colorpicker = (props: ColorpickerProps) => {
       ? [hexToRgbRes.r, hexToRgbRes.g, hexToRgbRes.b]
       : [];
   if (rgbInternal.length === 0) {
-    const colorNameRes = colorNameToRGB(color as string);
-    if (colorNameRes)
-      rgbInternal.push(colorNameRes.r, colorNameRes.g, colorNameRes.b);
+    const colorNameRes = colorNameToRGB(TempColor as string);
+    if (colorNameRes) rgbInternal.push(colorNameRes.r, colorNameRes.g, colorNameRes.b);
   }
 
-  const alphaProp =
-    !!isRgba && !!isRgb && 6 in isRgb ? parseFloat(isRgb[6]) * 100 : 100;
+  const alphaProp = !!isRgba && !!isRgb && 6 in isRgb ? parseFloat(isRgb[6]) * 100 : 100;
   const [AlphaVal, setAlphaVal] = React.useState(alphaProp);
 
   return (
@@ -122,7 +99,7 @@ export const Colorpicker = (props: ColorpickerProps) => {
         }}
         ref={InputRef}
       >
-        <ColorRect color={color} />
+        <ColorRect color={TempColor} />
       </IconButton>
       <Popover
         id={"colorpicker-popover"}
@@ -140,7 +117,7 @@ export const Colorpicker = (props: ColorpickerProps) => {
           horizontal: "center",
         }}
         PaperProps={{ sx: { width: 300, p: 1 } }}
-        // sx={}
+        disablePortal={fullscreen}
       >
         <Grid
           container
@@ -157,23 +134,18 @@ export const Colorpicker = (props: ColorpickerProps) => {
               <IconButton
                 color="default"
                 style={{ padding: 0 }}
-                onMouseOver={(e: any) => {
-                  setColorHover(`rgba(${rgbaColor[clrIdx]},${AlphaVal})`);
-                }}
-                onMouseLeave={() => {
-                  setColorHover(null);
-                }}
+                // onMouseOver={() => {
+                //   setColorHover(`rgba(${rgbaColor[clrIdx]},${AlphaVal})`);
+                // }}
+                // onMouseLeave={() => {
+                //   setColorHover(null);
+                // }}
                 onClick={() => {
-                  onColorSelected(
-                    "rgba(" + rgbaColor[clrIdx] + "," + AlphaVal / 100 + ")"
-                  );
+                  // onColorSelected("rgba(" + rgbaColor[clrIdx] + "," + AlphaVal / 100 + ")");
+                  setTempColor("rgba(" + rgbaColor[clrIdx] + "," + AlphaVal / 100 + ")");
                 }}
               >
-                <ColorRect
-                  color={"rgba(" + clr + ",1)"}
-                  width={24}
-                  height={24}
-                />
+                <ColorRect color={"rgba(" + clr + ",1)"} width={24} height={24} />
               </IconButton>
             </Grid>
           ))}
@@ -183,13 +155,8 @@ export const Colorpicker = (props: ColorpickerProps) => {
           <Grid item xs={6} style={{ padding: "0px 10px" }}>
             <Slider
               value={AlphaVal}
-              onChange={(e: any, val: any) => {
+              onChange={(e: Event, val: number | number[]) => {
                 setAlphaVal(Array.isArray(val) ? val[0] : val);
-                onColorSelected(
-                  `rgba(${rgbInternal[0]},${rgbInternal[1]},${rgbInternal[2]},${
-                    (Array.isArray(val) ? val[0] : val) / 100
-                  })`
-                );
               }}
             ></Slider>
           </Grid>
@@ -200,16 +167,12 @@ export const Colorpicker = (props: ColorpickerProps) => {
               size="small"
               inputProps={{ style: { padding: "5px 5px 5px 10px" } }}
               value={AlphaVal}
-              onChange={(e: any) => {
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
                 let val = parseInt(e.target.value, 10);
                 if (isNaN(val)) val = 0;
                 if (val < 0 || val > 100) return;
                 setAlphaVal(val);
-                onColorSelected(
-                  `rgba(${rgbInternal[0]},${rgbInternal[1]},${rgbInternal[2]},${
-                    val / 100
-                  })`
-                );
+                onColorSelected(`rgba(${rgbInternal[0]},${rgbInternal[1]},${rgbInternal[2]},${val / 100})`);
               }}
             />
           </Grid>
@@ -251,7 +214,7 @@ export const Colorpicker = (props: ColorpickerProps) => {
           <Grid item xs={2} />
           <Grid item xs={2}>
             <ColorRect
-              color={ColorHover ? ColorHover : color}
+              color={`rgba(${rgbInternal[0]},${rgbInternal[1]},${rgbInternal[2]},${AlphaVal / 100})`}
               width={24}
               height={24}
               BoxProps={{ maxWidth: 24, maxHeight: 24 }}
@@ -270,17 +233,20 @@ export const Colorpicker = (props: ColorpickerProps) => {
         >
           <Grid item xs={2}>
             <TextField
-              disabled
-              value={rgbInternal ? rgbInternal[0] : color}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const red = parseInt(e.target.value);
+                if (typeof red !== "number" || isNaN(red)) return;
+                const redAdjusted = Math.min(Math.max(red, 0), 255);
+                setTempColor(`rgba(${redAdjusted},${rgbInternal[1]},${rgbInternal[2]},${AlphaVal / 100})`);
+              }}
+              value={rgbInternal ? rgbInternal[0] : TempColor}
               margin="none"
               variant="outlined"
               size="small"
               inputProps={{
                 style: {
                   padding: 5,
-                  background: `rgba(184, 0, 0, ${
-                    rgbInternal ? rgbInternal[0] / 255 : 1
-                  })`,
+                  background: `rgba(184, 0, 0, ${rgbInternal ? rgbInternal[0] / 255 : 1})`,
                 },
               }}
             />
@@ -288,17 +254,20 @@ export const Colorpicker = (props: ColorpickerProps) => {
 
           <Grid item xs={2}>
             <TextField
-              disabled
-              value={rgbInternal ? rgbInternal[1] : color}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const green = parseInt(e.target.value);
+                if (typeof green !== "number" || isNaN(green)) return;
+                const greenAdjusted = Math.min(Math.max(green, 0), 255);
+                setTempColor(`rgba(${rgbInternal[0]},${greenAdjusted},${rgbInternal[2]},${AlphaVal / 100})`);
+              }}
+              value={rgbInternal ? rgbInternal[1] : TempColor}
               margin="none"
               variant="outlined"
               size="small"
               inputProps={{
                 style: {
                   padding: 5,
-                  background: `rgba(0, 208, 132, ${
-                    rgbInternal ? rgbInternal[1] / 255 : 1
-                  })`,
+                  background: `rgba(0, 208, 132, ${rgbInternal ? rgbInternal[1] / 255 : 1})`,
                 },
               }}
               fullWidth
@@ -306,17 +275,20 @@ export const Colorpicker = (props: ColorpickerProps) => {
           </Grid>
           <Grid item xs={2}>
             <TextField
-              disabled
-              value={rgbInternal ? rgbInternal[2] : color}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const blue = parseInt(e.target.value);
+                if (typeof blue !== "number" || isNaN(blue)) return;
+                const blueAdjusted = Math.min(Math.max(blue, 0), 255);
+                setTempColor(`rgba(${rgbInternal[0]},${rgbInternal[1]},${blueAdjusted},${AlphaVal / 100})`);
+              }}
+              value={rgbInternal ? rgbInternal[2] : TempColor}
               margin="none"
               variant="outlined"
               size="small"
               inputProps={{
                 style: {
                   padding: 5,
-                  background: `rgba(6, 147, 227, ${
-                    rgbInternal ? rgbInternal[2] / 255 : 1
-                  })`,
+                  background: `rgba(6, 147, 227, ${rgbInternal ? rgbInternal[2] / 255 : 1})`,
                 },
               }}
             />
@@ -338,7 +310,10 @@ export const Colorpicker = (props: ColorpickerProps) => {
               variant="contained"
               size="small"
               style={{ minWidth: 0 }}
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                onColorSelected(`rgba(${rgbInternal[0]},${rgbInternal[1]},${rgbInternal[2]},${AlphaVal / 100})`);
+              }}
             >
               OK
             </Button>

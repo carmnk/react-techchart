@@ -1,23 +1,32 @@
 import React from "react";
 import { useResizeDetector } from "react-resize-detector";
-import { useGesture } from "react-use-gesture";
-// import { useGesture as useGesture2 } from "@use-gesture/react";
+import useFullscreen from "react-use/lib/useFullscreen";
+import { useGesture } from "@use-gesture/react";
 import { isNullish } from "../utils/Basics";
 import { getDefaultChartInteractions } from "./Defaults";
 import * as T from "../Types";
 
-export const useChartInteractions = (
+export const useChartInteractions: T.UseChartInteractions = (
   ContainerRef: React.RefObject<HTMLElement>,
-  initialState: T.ChartState,
-  staticWidth: T.ChartStateProps["width"],
-  staticHeight: T.ChartStateProps["height"],
-  settings: T.ChartStateProps["settings"],
-  fullscreen: boolean
+  PointerContainerRef: React.RefObject<HTMLElement>,
+  ChartState: T.ChartState,
+  Dispatch: T.ChartController["Dispatch"],
+  stateProps: T.UseChartControllerProps
 ) => {
-  const { containerMode: containerModeIn, disablePointerEvents } = settings;
+  const { settings, width: staticWidth, height: staticHeight, events } = stateProps;
+  const { containerMode: containerModeIn } = settings || {};
+  const { disablePointerEvents } = events || {};
+  const { fullscreen } = ChartState;
   const containerMode = containerModeIn === "static" && staticHeight && staticWidth ? "static" : "responsive";
-  /* T.ChartInteractions ref used to store/accumulate interactive state changes before setting state */
-  const ChartInteractionsRef = React.useRef<T.ChartInteractions>(getDefaultChartInteractions(initialState));
+  const InteractionsRef = React.useRef<T.ChartInteractions>(getDefaultChartInteractions(ChartState));
+
+  useFullscreen(ContainerRef, fullscreen, {
+    onClose: () =>
+      Dispatch({
+        task: "setGeneralProp",
+        params: { prop: "toggleFullscreen" },
+      } as T.ReducerAction<"setGeneralProp">),
+  });
 
   /* update static container size if not in fullscreen */
   const { top: clientTop, left: clientLeft } = ContainerRef?.current?.getBoundingClientRect() ?? {};
@@ -25,7 +34,6 @@ export const useChartInteractions = (
     const ref = ContainerRef;
     if (!ref?.current || fullscreen || containerMode !== "static") return;
     if (isNullish(clientTop) || isNullish(clientLeft) || isNullish(staticWidth) || isNullish(staticHeight)) return;
-    const Interactions = ChartInteractionsRef.current;
     const containerSize = {
       top: clientTop,
       left: clientLeft,
@@ -38,11 +46,11 @@ export const useChartInteractions = (
     ref.current.style.height = containerMode === "static" && staticHeight !== undefined ? staticHeight + "px" : "100%";
     ref.current.style.top = "0px";
     ref.current.style.left = "0px";
-    ChartInteractionsRef.current = {
-      ...Interactions,
+    InteractionsRef.current = {
+      ...InteractionsRef.current,
       stateControl: {
-        ...Interactions.stateControl,
-        shallUpdate: [...Interactions.stateControl.shallUpdate, "containerResize"],
+        ...InteractionsRef.current.stateControl,
+        shallUpdate: [...InteractionsRef.current.stateControl.shallUpdate, "containerResize"],
       },
       containerSize,
     };
@@ -52,21 +60,15 @@ export const useChartInteractions = (
   React.useEffect(() => {
     const ref = ContainerRef;
     if (!ref?.current) return;
-    if (disablePointerEvents) {
-      ref.current.style.pointerEvents = "none";
-      return;
-    }
-    ref.current.style.pointerEvents = "auto";
     if (!fullscreen) return;
-    const Interactions = ChartInteractionsRef.current;
-    const handleWindowResize = (e?: Event) => {
+    const handleWindowResize = () => {
       if (!ref || !ref.current) return;
       const { innerWidth: width, innerHeight: height } = window;
-      ChartInteractionsRef.current = {
-        ...Interactions,
+      InteractionsRef.current = {
+        ...InteractionsRef.current,
         stateControl: {
-          ...Interactions.stateControl,
-          shallUpdate: [...Interactions.stateControl.shallUpdate, "containerResize"],
+          ...InteractionsRef.current.stateControl,
+          shallUpdate: [...InteractionsRef.current.stateControl.shallUpdate, "containerResize"],
         },
         containerSize: { top: 0, left: 0, width, height, init: true },
       };
@@ -80,18 +82,17 @@ export const useChartInteractions = (
     };
   }, [ContainerRef, fullscreen, disablePointerEvents]);
 
-  /* init and update container size if in responsive containerMode using parents size */
+  /* init and update container size if in responsive containerMode and not fullscreen */
   const handleResizeDetected = React.useCallback(
     (width, height) => {
       if (containerMode !== "responsive" || isNullish(width) || isNullish(height) || fullscreen) return;
       if (!ContainerRef?.current?.parentElement) return;
-      const Interactions = ChartInteractionsRef.current;
       const { top, left } = ContainerRef.current.parentElement.getBoundingClientRect();
-      ChartInteractionsRef.current = {
-        ...Interactions,
+      InteractionsRef.current = {
+        ...InteractionsRef.current,
         stateControl: {
-          ...Interactions.stateControl,
-          shallUpdate: [...Interactions.stateControl.shallUpdate, "containerResize"],
+          ...InteractionsRef.current.stateControl,
+          shallUpdate: [...InteractionsRef.current.stateControl.shallUpdate, "containerResize"],
         },
         containerSize: { top, left, width, height, init: true },
       };
@@ -104,149 +105,137 @@ export const useChartInteractions = (
   });
 
   /* pointer event handlers  */
-  const transformVector = (xy: [number, number]): [number, number] => [xy[0] - 0, xy[1] - 0];
+  const transformVector = (xy: [number, number]): [number, number] => [
+    xy[0] - (clientLeft ?? 0),
+    xy[1] - (clientTop ?? 0),
+  ];
   useGesture(
     {
       onPinch: (pinchState) => {
-        if (disablePointerEvents) return;
-        const { active: isPinching, origin, movement: movementInitial, first, offset } = pinchState;
-        ChartInteractionsRef.current.pointer = {
-          ...ChartInteractionsRef.current.pointer,
+        const { active: isPinching, origin, first, values, initial } = pinchState;
+        InteractionsRef.current.pointer = {
+          ...InteractionsRef.current.pointer,
           pinch: {
             isPinching,
             origin: transformVector(origin),
-            movementInitial, //: [(offset[0] - 1) * 100, (movementInitial[1] - 1) * 100],
+            movementInitial: [values[0] - initial[0], values[1] - initial[1]],
             first,
           },
         };
-        // alert("pinch: " + movementInitial + "vs:" + pinchState.offset+ ", origin: " + transformVector(origin));
-        ChartInteractionsRef.current.stateControl.shallUpdate = [
-          ...ChartInteractionsRef.current.stateControl.shallUpdate.filter((val) => val !== "pointerMove"),
+        InteractionsRef.current.stateControl.shallUpdate = [
+          ...InteractionsRef.current.stateControl.shallUpdate.filter((val) => val !== "pointerMove"),
           "pinch",
         ];
       },
       onDrag: (dragState) => {
-        if (disablePointerEvents) return;
-        const shallAlreadyUpdate = ChartInteractionsRef.current.stateControl.shallUpdate.includes("drag");
-        const prevDelta = ChartInteractionsRef.current.pointer.drag.delta;
+        const shallAlreadyUpdate = InteractionsRef.current.stateControl.shallUpdate.includes("drag");
+        const prevDelta = InteractionsRef.current.pointer.drag.delta;
         const deltaX = shallAlreadyUpdate && !!prevDelta ? prevDelta[0] + dragState.delta[0] : dragState.delta[0];
         const deltaY = shallAlreadyUpdate && !!prevDelta ? prevDelta[1] + dragState.delta[1] : dragState.delta[1];
-        const {
-          xy,
-          initial,
-          movement: movementInitial,
-          first: firstIn,
-          last: lastIn,
-          active: isDragging,
-          ctrlKey,
-        } = dragState;
-        const first = shallAlreadyUpdate ? ChartInteractionsRef.current.pointer.drag.first || firstIn : firstIn;
-        const last = shallAlreadyUpdate ? ChartInteractionsRef.current.pointer.drag.last || lastIn : lastIn;
+        const { xy, initial, movement, first: firstIn, last: lastIn, active: isDragging, ctrlKey } = dragState;
+        const first = shallAlreadyUpdate ? InteractionsRef.current.pointer.drag.first || firstIn : firstIn;
+        const last = shallAlreadyUpdate ? InteractionsRef.current.pointer.drag.last || lastIn : lastIn;
         if (isDragging && !first && !dragState.delta[0] && !dragState.delta[1]) return;
-        ChartInteractionsRef.current = {
-          ...ChartInteractionsRef.current,
+        InteractionsRef.current = {
+          ...InteractionsRef.current,
           pointer: {
-            ...ChartInteractionsRef.current.pointer,
+            ...InteractionsRef.current.pointer,
             drag: {
               isDragging,
               xy: transformVector(xy),
               initial: transformVector(initial),
-              movementInitial,
+              movementInitial: !disablePointerEvents ? movement : [0, 0],
               last,
               first,
-              delta: [deltaX, deltaY],
+              delta: !disablePointerEvents ? [deltaX, deltaY] : [0, 0],
               ctrlKey,
             },
           },
           stateControl: {
-            ...ChartInteractionsRef.current.stateControl,
-            shallUpdate: [...ChartInteractionsRef.current.stateControl.shallUpdate, "drag"],
-            // lastUpdate: ChartInteractionsRef.current.stateControl.lastUpdate,
+            ...InteractionsRef.current.stateControl,
+            shallUpdate: [...InteractionsRef.current.stateControl.shallUpdate, "drag"],
           },
         };
       },
       onMove: (moveState) => {
-        if (disablePointerEvents) return;
         const isMoving = moveState.active;
         if (isMoving && !moveState.first && !moveState.delta[0] && !moveState.delta[1]) return;
-        ChartInteractionsRef.current = {
-          ...ChartInteractionsRef.current,
+        InteractionsRef.current = {
+          ...InteractionsRef.current,
           pointer: {
-            ...ChartInteractionsRef.current.pointer,
+            ...InteractionsRef.current.pointer,
             move: {
               isMoving: moveState.active,
               xy: transformVector(moveState.xy),
             },
           },
           stateControl: {
-            ...ChartInteractionsRef.current.stateControl,
-            shallUpdate: [...ChartInteractionsRef.current.stateControl.shallUpdate, "pointerMove"],
+            ...InteractionsRef.current.stateControl,
+            shallUpdate: [...InteractionsRef.current.stateControl.shallUpdate, "pointerMove"],
           },
         };
       },
       onHover: (hoverState) => {
-        if (disablePointerEvents) return;
-        ChartInteractionsRef.current = {
-          ...ChartInteractionsRef.current,
+        InteractionsRef.current = {
+          ...InteractionsRef.current,
           pointer: {
-            ...ChartInteractionsRef.current.pointer,
+            ...InteractionsRef.current.pointer,
             isHovering: hoverState.active,
           },
           stateControl: {
-            ...ChartInteractionsRef.current.stateControl,
-            shallUpdate: [...ChartInteractionsRef.current.stateControl.shallUpdate, "pointerMove"],
+            ...InteractionsRef.current.stateControl,
+            shallUpdate: [...InteractionsRef.current.stateControl.shallUpdate, "pointerMove"],
           },
         };
       },
       onWheel: (wheelState) => {
-        if (disablePointerEvents) return;
-        const shallAlreadyUpdate = ChartInteractionsRef.current.stateControl.shallUpdate.includes("wheel");
-        const prevDelta = ChartInteractionsRef.current.pointer.wheel.delta;
+        const shallAlreadyUpdate = InteractionsRef.current.stateControl.shallUpdate.includes("wheel");
+        const prevDelta = InteractionsRef.current.pointer.wheel.delta;
         const deltaX = shallAlreadyUpdate && !!prevDelta ? prevDelta[0] + wheelState.delta[0] : wheelState.delta[0];
         const deltaY = shallAlreadyUpdate && !!prevDelta ? prevDelta[1] + wheelState.delta[1] : wheelState.delta[1];
-        ChartInteractionsRef.current = {
-          ...ChartInteractionsRef.current,
+
+        InteractionsRef.current = {
+          ...InteractionsRef.current,
           pointer: {
-            ...ChartInteractionsRef.current.pointer,
+            ...InteractionsRef.current.pointer,
             wheel: { delta: [deltaX, deltaY], isWheeling: wheelState.active },
           },
           stateControl: {
-            ...ChartInteractionsRef.current.stateControl,
-            shallUpdate: [...ChartInteractionsRef.current.stateControl.shallUpdate, "wheel"],
+            ...InteractionsRef.current.stateControl,
+            shallUpdate: [...InteractionsRef.current.stateControl.shallUpdate, "wheel"],
           },
         };
       },
       onDragEnd: (dragState) => {
-        if (disablePointerEvents) return;
-        const { xy, first, last, movement: movementInitial } = dragState;
-        ChartInteractionsRef.current = {
-          ...ChartInteractionsRef.current,
+        const { xy: xyIn } = dragState;
+        const xy = transformVector(xyIn);
+        InteractionsRef.current = {
+          ...InteractionsRef.current,
           pointer: {
-            ...ChartInteractionsRef.current.pointer,
-            dragPointerUp: {
-              isDragPointerUp: true,
-              xy: transformVector(xy),
-            },
+            ...InteractionsRef.current.pointer,
+            dragPointerUp: { isDragPointerUp: true, xy },
           },
           stateControl: {
-            ...ChartInteractionsRef.current.stateControl,
-            shallUpdate: [...ChartInteractionsRef.current.stateControl.shallUpdate, "dragEnd"],
+            ...InteractionsRef.current.stateControl,
+            shallUpdate: [...InteractionsRef.current.stateControl.shallUpdate, "dragEnd"],
           },
         };
       },
     },
     {
-      domTarget: fullscreen ? document.body : ContainerRef,
-      transform: ([x, y]) => [x - (clientLeft ?? 0), y - (clientTop ?? 0)],
-      drag: { experimental_preventWindowScrollY: true, useTouch: true },
+      // target: ContainerRef,
+      target: PointerContainerRef,
+
       enabled:
-        // !disablePointerEvents &&
-        ChartInteractionsRef.current.containerSize.init,
+        !ChartState.menu?.disablePointerEvents && !disablePointerEvents && InteractionsRef.current.containerSize.init,
       eventOptions: { passive: false, capture: false },
-      pinch: { transform: ([x, y]) => [x, y] },
-      wheel: { transform: ([x, y]) => [x, y] },
+      pinch: { axis: "x" }, // not as intended but low prio -> will also scale on y-pinch
+      drag: { preventScroll: true, touch: true },
+      wheel: { preventDefault: true },
+      hover: { mouseOnly: false },
+      move: { mouseOnly: false },
     }
   );
 
-  return ChartInteractionsRef;
+  return InteractionsRef;
 };

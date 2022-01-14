@@ -1,14 +1,11 @@
 import React from "react";
 import { Line, Rect } from "react-konva";
 import * as T from "../../Types";
-// import { useReactiveInfo2 } from "../../utils/React";
 
 export type CCandleChartProps = {
-  subCharts: T.ChartState["subCharts"];
+  subcharts: T.ChartState["subcharts"];
   calcXaxis: T.ChartState["calc"]["xaxis"];
   calcSubcharts: T.ChartState["calc"]["subcharts"];
-  // yToPix?: (y: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;
-  // pixToY?: (pixY: number, subchartIdx: number, yaxisIdx: number, translatedY?: number) => number;
   subchartIdx?: number;
   yaxisIdx?: number;
   graphIdx?: number;
@@ -16,9 +13,8 @@ export type CCandleChartProps = {
 };
 
 export const CCandleChartComponent = (props: CCandleChartProps) => {
-  const { subCharts, calcXaxis, calcSubcharts, subchartIdx = 0, yaxisIdx = 0, graphIdx = 0, rtTicks } = props;
-  // const { xaxis } = calc;
-  const yaxis = subCharts?.[subchartIdx]?.yaxis?.[yaxisIdx];
+  const { subcharts, calcXaxis, calcSubcharts, subchartIdx = 0, yaxisIdx = 0, graphIdx = 0, rtTicks } = props;
+  const yaxis = subcharts?.[subchartIdx]?.yaxis?.[yaxisIdx];
   const graph = yaxis?.graphs[graphIdx];
   const graphCalc = calcSubcharts?.[subchartIdx]?.yaxis?.[yaxisIdx]?.graphs?.[graphIdx];
   const curTicks = React.useMemo(
@@ -29,10 +25,7 @@ export const CCandleChartComponent = (props: CCandleChartProps) => {
     () => (calcXaxis?.scaledWidthPerTick > 2 ? Math.floor(0.35 * (calcXaxis.scaledWidthPerTick - 1)) : 0),
     [calcXaxis.scaledWidthPerTick]
   );
-  // const info = useReactiveInfo2([subCharts, calcXaxis, calcSubcharts, subchartIdx, yaxisIdx, graphIdx]);
   if (!graph || !T.isChartGraph(graph) || !curTicks) return null;
-
-  // console.log("candlechart renders", info);
 
   return (
     <React.Fragment>
@@ -42,7 +35,6 @@ export const CCandleChartComponent = (props: CCandleChartProps) => {
         const pixY = pixDataset.pixY;
         const { pixOpen, pixHigh, pixLow, pixClose } = pixY;
         const maxWidth = dxHalfCandle * 2;
-        // xPix + dxHalfCandle > calcXaxis.pixXEnd ? calcXaxis.pixXEnd - xPix + dxHalfCandle :dxHalfCandle * 2;
 
         return (
           <React.Fragment key={`candle-${tIdx}`}>
