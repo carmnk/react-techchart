@@ -1,9 +1,9 @@
-# react-techchart [![Typescript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://github.com) [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://github.com)
+# react-techchart <br/> [![Typescript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://github.com) [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://github.com) <img src="https://img.shields.io/github/package-json/v/carmnk/react-techchart" alt="Version Badge" /> <img src="https://img.shields.io/github/license/carmnk/react-techchart.svg" alt="Licence Badge" /> 
 
 <p align="center">
 <img src="https://github.com/carmnk/resources/raw/main/icons/logo512.png" alt="react-techchart-logo" height="128px" width="128px"/> <br/>an interactive and extensible react charting tool designed for technical analysis.
 <br/>
-<span style="color: red;">experimental release 0.1.1</span>
+<span style="color: red;">experimental release</span>
 </p>
 
 ---
