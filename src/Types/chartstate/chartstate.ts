@@ -58,7 +58,7 @@ export type ChartState = {
   };
   subcharts: SubchartState[];
   data: (ChartData | IndicatorData)[];
-  pointer: PointerState;
+  // pointer: PointerState;
   containerSize: ContainerSizeState;
   calc: CalcState;
   menu: {

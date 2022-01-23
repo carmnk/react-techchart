@@ -5,15 +5,16 @@ import { calculateXaxis } from "../Calc/CalcXaxis";
 import { resizeContainer, resizeSubchart, editToolPosition, drawTool } from "./CalcInteractions";
 import { snapToolsByXy } from "../utils/Utils";
 import * as T from "../../Types";
+import { defaultCalcPointer } from "../Defaults";
 
 export const interactionsUpdate = (
   current: T.ChartState,
   params: T.ReducerAction<"updateInteractionState">["params"]
 ) => {
-  const { Interactions, RtData } = params;
+  const { Interactions, RtData, disablePointerEvents } = params;
   const { isRtOutOfRange, rtData } = RtData;
   const newState = current;
-  const { action: chartAction } = getAction(Interactions, newState, isRtOutOfRange);
+  const { action: chartAction } = getAction(Interactions, newState, isRtOutOfRange, disablePointerEvents);
   // pre-calc updates
   if (chartAction?.containerResize?.active)
     newState.subcharts = resizeContainer(Interactions.containerSize.height, newState);
@@ -32,8 +33,14 @@ export const interactionsUpdate = (
       ? getYaxisMethods(newState.subcharts, calcSubcharts)
       : {};
   const calc = { ...newState.calc, xaxis: calcXaxis, subcharts: calcSubcharts, ...yaxisMethods } as any;
-  const calcPointer =
-    (chartAction?.pointerMove && calculatePointer(newState, Interactions.pointer, calc)) || newState.calc.pointer;
+  const calcPointer = disablePointerEvents
+    ? defaultCalcPointer
+    : (chartAction?.pointerMove && calculatePointer(newState, Interactions.pointer, calc)) ||
+      (Interactions?.pointer?.isHovering !== newState.calc.pointer.isHovering && {
+        ...newState.calc.pointer,
+        isHovering: Interactions?.pointer?.isHovering,
+      }) ||
+      newState.calc.pointer;
   // post-calc-updates (wheeling is allowed during tool drawing or editing)
   newState.subcharts =
     chartAction?.pointer?.type === "editTool" && chartAction?.pointer?.shallUpdate
@@ -164,11 +171,29 @@ const getDragAction = (PreState: T.ChartInteractions, ChartState: T.ChartState):
 const getAction = (
   PreState: T.ChartInteractions,
   ChartState: T.ChartState,
-  isRtOutOfRange: boolean
+  isRtOutOfRange: boolean,
+  disablePointerEvents?: boolean
 ): { action: T.Action } => {
   const { xaxis, action: prevAction } = ChartState.calc;
   const { stateControl, pointer } = PreState;
   const { shallUpdate: interactiveUpdates } = stateControl;
+  const containerResize = {
+    active: interactiveUpdates.includes("containerResize"), //&& ChartState.subcharts.length > 0,
+  };
+  const deps = interactiveUpdates.includes("deps");
+  if (disablePointerEvents)
+    return {
+      action: {
+        pointer: null,
+        wheel: null,
+        pointerMove: false,
+        isRtOutOfRange,
+        containerResize,
+        deps,
+        shallUpdateXaxis: deps,
+        shallUpdateCalcSubcharts: deps || containerResize.active,
+      },
+    };
   const wheelDeltaY = pointer.wheel?.delta[1];
   const isWheeling = !!pointer.wheel?.isWheeling && interactiveUpdates.includes("wheel") && !!wheelDeltaY;
   const wheel = isWheeling ? { wheelDeltaY, type: "wheelScale" as const } : null;
@@ -183,10 +208,7 @@ const getAction = (
         }
       : null;
   const pointerAction = pinch ? pinch : getDragAction(PreState, ChartState);
-  const containerResize = {
-    active: interactiveUpdates.includes("containerResize"), //&& ChartState.subcharts.length > 0,
-  };
-  const deps = interactiveUpdates.includes("deps");
+
   const shallUpdateCalcSubcharts =
     (["scale", "translate"].includes(pointerAction?.type ?? "") && (pointerAction as T.DragAction)?.shallUpdate) ||
     pointerAction?.type === "resizeSubchart" ||
@@ -208,7 +230,7 @@ const getAction = (
     deps,
     shallUpdateCalcSubcharts,
     shallUpdateXaxis,
-    pointerMove: stateControl.shallUpdate.includes("pointerMove"),
+    pointerMove: stateControl.shallUpdate.includes("pointerMove") && pointer?.move?.isMoving,
     isRtOutOfRange,
   };
   return {

@@ -1,6 +1,17 @@
 import { parse } from "csv-parse/browser/esm/sync";
 
+// import parse2 = require("csv-parse/browser/esm/sync");
+// import { Options } from "csv-parse";
+// const isNode = typeof process === "object";
+// const csvSyncPars = (await import(isNode ? "csv-parse/sync" : "csv-parse/browser/esm/sync")).default as {
+//   parse: (input: Buffer | string, options?: Options) => any;
+// };
+
 export async function parseCsvFileObj(data: File) {
+  // const csvSyncPars = (await import(typeof process === "object" ? "csv-parse/sync" : "csv-parse/browser/esm/sync"))
+  //   .default as { parse: (input: Buffer | string, options?: Options) => any };
+  // const { parse } = csvSyncPars;
+
   const res = await data.text().then((dataString) => {
     const rowDelimiter = [
       { chars: "\r\n", amt: dataString.match(/\r\n/gm)?.length ?? 0 },

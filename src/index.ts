@@ -52,8 +52,19 @@ export {
   getSubchartIdxByPixXy,
   snapToolsByXy,
   getMaxDataSeriesDecimals,
+  FactoryTesting,
 } from "./ChartState";
-
+export {
+  CBarChart,
+  CLineChart,
+  CCandleChart,
+  CText,
+  defaultCanvasCharts,
+  Crosshair,
+  Marker,
+  Xaxis,
+  Yaxis,
+} from "./Canvas";
 export {
   isNullish,
   includesOne,
@@ -64,4 +75,5 @@ export {
   removeStateProp,
   getStateProp,
   useReactiveInfo2,
+  parseCsvFileObj,
 } from "./utils";

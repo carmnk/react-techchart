@@ -237,5 +237,16 @@ export const useChartInteractions: T.UseChartInteractions = (
     }
   );
 
-  return InteractionsRef;
+  return !disablePointerEvents
+    ? InteractionsRef
+    : {
+        current: {
+          ...InteractionsRef.current,
+          stateControl: {
+            shallUpdate: InteractionsRef.current.stateControl.shallUpdate.filter(
+              (val) => val === "containerResize" || val === "deps"
+            ),
+          },
+        },
+      };
 };

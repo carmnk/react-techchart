@@ -108,7 +108,7 @@ const calculatePointerXvals = (
   xaxis: T.CalcXaxisState,
   mainGraph: T.ChartGraphState | null,
   data: T.ChartState["data"],
-  onMove?: T.ChartState["pointer"]["move"]
+  onMove?: T.PointerState["move"]
 ):
   | (Pick<T.CalcPointerState["move"], "pixXSnap" | "xUnlimited" | "xDateString" | "pixXUnlimSnap"> & { x: number })
   | Pick<T.CalcPointerState["move"], "xUnlimited" | "pixXUnlimSnap">

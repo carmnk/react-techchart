@@ -4,8 +4,7 @@ import { DeepPartial } from "../Types/utils/utils";
 import { setStateProp } from "../utils";
 import { isNullish } from "../utils/Basics";
 
-export const prefersDarkMode =
-  typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)").matches : false;
+export const prefersDarkMode = window?.matchMedia?.("(prefers-color-scheme: dark)")?.matches || false;
 
 export const graphColorsLight: string[] = ["#666", "#0693E3", "#f50057", "#00D084", "#FF6900", "#bd10e0", "#bbb"];
 export const graphColorsDark: string[] = ["#bbb", "#0693E3", "#f50057", "#00D084", "#FF6900", "#bd10e0", "#bbb"];
@@ -43,7 +42,7 @@ export const defaultContainerSizeState: T.ChartState["containerSize"] = {
   height: 300,
   init: false,
 };
-export const defaultPointerState: T.ChartState["pointer"] = {
+export const defaultPointerState: T.PointerState = {
   isHovering: false,
   move: { isMoving: false, xy: [0, 0] },
   wheel: { isWheeling: false, delta: [0, 0] },
@@ -162,7 +161,7 @@ export const defaultState: T.ChartState = {
   fullscreen: false,
   draw: defaultDrawState,
   containerSize: defaultContainerSizeState,
-  pointer: defaultPointerState,
+  // pointer: defaultPointerState,
   calc: { subcharts: [], xaxis: defaultCalcXaxis, pointer: defaultCalcPointer },
   theme: defaultLightTheme,
   menu: { location: null, expandedSetting: [], disablePointerEvents: false, snackbars: [] },
@@ -286,7 +285,7 @@ export const getInitState = (
 export const getDefaultChartInteractions = (initialChartState: T.ChartState): T.ChartInteractions => {
   return {
     containerSize: initialChartState.containerSize,
-    pointer: initialChartState.pointer,
+    pointer: defaultPointerState,
     stateControl: {
       shallUpdate: [],
     },

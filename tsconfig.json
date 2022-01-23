@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "target": "es5",
+    "types": ["node", "jest"],
     "module": "esnext",
     "jsx": "react-jsx",
-    "lib": ["es5", "es6", "ES2021", "ES2020", "esnext", "dom"],
+    "lib": ["es5", "es6", "ES2021", "ES2017", "ES2020", "esnext", "dom"],
     "rootDir": "src",
     "outDir": "./lib",
     "strict": true,
@@ -16,8 +17,7 @@
     "moduleResolution": "node",
     "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,
-    "strictNullChecks": true,
+    "strictNullChecks": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules/**"]
+  "include": ["src/**/*.ts"]
 }

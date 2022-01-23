@@ -1,3 +1,10 @@
+// import { createChartData, updateChartData, updateChartDataAndDeps, getDateStat } from "./Factory/ChartDataFactory";
+// const Testing = {createChartData,
+//   updateChartData,
+//   updateChartDataAndDeps,
+//   getDateStat,}
+export * as FactoryTesting from "./Factory/Factory";
+
 export {
   prefersDarkMode,
   defaultContainerSizeState,

@@ -2,7 +2,7 @@ import React from "react";
 import deepEqual from "lodash/isEqual";
 import clone from "lodash/cloneDeep";
 import { chartStateReducer } from "./Reducer";
-import { getInitState } from "./Defaults";
+import { getInitState, defaultPointerState } from "./Defaults";
 import { useChartInteractions } from "./useChartInteractions";
 import { getRtTicks, isRtDataOutOfRange } from "./Calc/CalcRtData";
 // import { useReactiveInfo2 } from "../utils";
@@ -113,10 +113,8 @@ export const useChartController: T.UseChartController = (params: T.UseChartContr
         // load new graph?
       }
     } else {
-      Dispatch({
-        task: "addSubchart",
-        params: { dataSeries: data.data, graphName: data.name, reset: true, id: data.id },
-      });
+      Dispatch({ task: "initData", params: { datas: [data, ...initialIndicators] } });
+      return;
     }
   }, [data, ChartState.containerSize.init, ChartState.data, ChartState.subcharts, initialIndicators]);
 

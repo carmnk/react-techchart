@@ -51,7 +51,7 @@ export type ReducerSetGeneralProps =
 
 export type ReducerSetGraphProps =
   | "strokeColor"
-  | "candleChartColor"
+  // | "candleChartColor"
   | "candleUpColor"
   | "candleDownColor"
   | "candleStrokeColor"
@@ -142,6 +142,7 @@ export type ReducerAction<T extends ReducerTask = ReducerTask> = {
     ? {
         Interactions: ChartInteractions;
         RtData: { rtData: UseChartControllerProps["rtData"]; isRtOutOfRange: boolean };
+        disablePointerEvents: boolean;
       }
     : T extends "clearChart"
     ? {

@@ -18,7 +18,7 @@ export const resizeContainer = (newContainerHeight: number, ChartState: T.ChartS
 export const resizeSubchart = (
   action: T.Action,
   subcharts: T.ChartState["subcharts"],
-  drag: T.ChartState["pointer"]["drag"]
+  drag: T.PointerState["drag"]
 ): T.ChartState["subcharts"] => {
   if (action?.pointer?.type !== "resizeSubchart") return subcharts;
   const dragAction = action.pointer as T.DragAction<"resizeSubchart">;
