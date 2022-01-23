@@ -24,6 +24,9 @@ Object.defineProperty(document, "fullscreenerror", jest.fn());
 jest.mock("../../lib/utils/Csv.js", () => ({
   parseCsvFileObj: jest.fn(),
 }));
+// jest.mock("../../src/utils/Csv.ts", () => ({
+//   parseCsvFileObj: jest.fn(),
+// }));
 
 jest.useFakeTimers();
 
