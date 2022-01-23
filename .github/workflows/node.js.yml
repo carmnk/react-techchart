@@ -27,7 +27,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     # basically npm install but only installs from package-lock
-    - run: npm i
+    - run: npm i react
+    - run: npm i react-dom
+    - run: npm ci
     - run: npm run lint
     - run: npm t
 
