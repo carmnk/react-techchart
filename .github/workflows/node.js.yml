@@ -81,7 +81,3 @@ jobs:
           message: ${{ env.COVERAGE }}
           color: green
           namedLogo: jest
-      - if: ${{ matrix.node-version == '16.x' }}
-        name: Crosscheck
-        run: |
-        echo "->out: ${{ env.COVERAGE }}"
