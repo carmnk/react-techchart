@@ -24,14 +24,11 @@ Object.defineProperty(document, "fullscreenerror", jest.fn());
 jest.mock("../../lib/utils/Csv.js", () => ({
   parseCsvFileObj: jest.fn(),
 }));
-// jest.mock("../../src/utils/Csv.ts", () => ({
-//   parseCsvFileObj: jest.fn(),
-// }));
 
 jest.useFakeTimers();
 
-const { Chart, defaultDarkTheme, useChartController, KAMA, EMA, iRSI } = require("../webpack-test");
-// const { Chart, defaultDarkTheme, useChartController, KAMA, EMA, iRSI } = require("../../lib");
+// const { Chart, defaultDarkTheme, useChartController, KAMA, EMA, iRSI } = require("../webpack-test");
+const { Chart, defaultDarkTheme, useChartController, KAMA, EMA, iRSI } = require("../../lib");
 
 export const defaultSettings = {
   disableTheme: true,
